@@ -39,10 +39,64 @@ To send us a pull request, please:
 GitHub provides additional document on [forking a repository](https://help.github.com/articles/fork-a-repo/) and
 [creating a pull request](https://help.github.com/articles/creating-a-pull-request/).
 
-
 ## Finding contributions to work on
 Looking at the existing issues is a great way to find something to contribute on. As our projects, by default, use the default GitHub issue labels (enhancement/bug/duplicate/help wanted/invalid/question/wontfix), looking at any 'help wanted' issues is a great place to start.
 
+## How to Add New Content
+
+### Step 1: Copy the Template
+
+```bash
+# For a new demo
+mkdir -p demos/my-awesome-demo
+cp templates/README_TEMPLATE.md demos/my-awesome-demo/README.md
+
+# For a new experiment
+mkdir -p experiments/my-experiment
+cp templates/README_TEMPLATE.md experiments/my-experiment/README.md
+
+# For a new snippet
+cp templates/README_TEMPLATE.md snippets/my-snippet.md
+```
+
+### Step 2: Fill in the Template
+
+Edit your new README.md and replace all bracketed placeholders:
+- `[Your Title Here]` → Your actual title
+- `[One-line description...]` → Your description
+- Fill in all sections with your content
+- Keep all section headers (##) exactly as they are
+
+### Step 3: Required Sections
+
+These sections MUST be included and filled out:
+- **Tags**: At least 2 tags for categorization
+- **Technologies**: List all technologies used
+- **Difficulty**: Must be Easy, Medium, or Advanced
+- **Cleanup Instructions**: Must provide the steps required to delete/terminate all resources deployed as part of the solution
+- **Security**: Must link to CONTRIBUTING.md
+- **License**: Must reference MIT-0 License
+
+### Step 4: Add Your Code
+
+Add your actual code files alongside the README:
+```bash
+demos/my-awesome-demo/
+├── README.md     # Your filled template
+├── main.py       # Your demo code
+├── requirements.txt
+└── config.yaml   # If needed
+```
+
+### Step 5: Push Your Changes
+
+```bash
+git add .
+git commit -m "Add new demo: my-awesome-demo"
+git push
+```
+
+The GitHub Action will automatically create the website page for your content.
 
 ## Code of Conduct
 This project has adopted the [Amazon Open Source Code of Conduct](https://aws.github.io/code-of-conduct).

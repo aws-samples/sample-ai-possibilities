@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+websockets==11.0.3
+python-multipart
+python-dotenv==1.0.0
+strands-agents
+strands-agents-tools
+mcp
+requests

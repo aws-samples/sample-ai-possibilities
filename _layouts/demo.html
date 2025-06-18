@@ -1,0 +1,39 @@
+---
+layout: default
+---
+<article class="demo-page">
+  <header>
+    <h1>{{ page.title }}</h1>
+    {% if page.description %}
+      <p class="description">{{ page.description }}</p>
+    {% endif %}
+    
+    <div class="metadata">
+      <span class="date">{{ page.date | date: "%B %d, %Y" }}</span>
+      {% if page.difficulty %}
+        <span class="difficulty difficulty-{{ page.difficulty | downcase }}">
+          {{ page.difficulty }}
+        </span>
+      {% endif %}
+    </div>
+  </header>
+  
+  {% if page.tags %}
+    <div class="tags">
+      {% for tag in page.tags %}
+        <span class="tag">{{ tag }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+  
+  <div class="content">
+    {{ content }}
+  </div>
+  
+  {% if page.source_code %}
+    <div class="source-code">
+      <h3>Source Code</h3>
+      <a href="{{ page.source_code }}" class="btn">View on GitHub</a>
+    </div>
+  {% endif %}
+</article>

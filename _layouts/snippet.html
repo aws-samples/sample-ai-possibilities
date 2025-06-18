@@ -1,0 +1,21 @@
+---
+layout: default
+---
+<article class="snippet-page">
+  <header>
+    <h1>{{ page.title }}</h1>
+    {% if page.description %}
+      <p class="description">{{ page.description }}</p>
+    {% endif %}
+  </header>
+  
+  {% if page.language %}
+    <div class="language-badge">
+      Language: <code>{{ page.language }}</code>
+    </div>
+  {% endif %}
+  
+  <div class="content">
+    {{ content }}
+  </div>
+</article>

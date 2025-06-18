@@ -1,0 +1,27 @@
+---
+layout: default
+---
+<article class="experiment-page">
+  <header>
+    <h1>{{ page.title }}</h1>
+    {% if page.description %}
+      <p class="description">{{ page.description }}</p>
+    {% endif %}
+    
+    <div class="metadata">
+      <span class="date">{{ page.date | date: "%B %d, %Y" }}</span>
+    </div>
+  </header>
+  
+  {% if page.tags %}
+    <div class="tags">
+      {% for tag in page.tags %}
+        <span class="tag">{{ tag }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+  
+  <div class="content">
+    {{ content }}
+  </div>
+</article>

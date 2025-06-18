@@ -1,0 +1,55 @@
+# Site settings
+title: "AI Possibilities Samples"
+description: "AWS AI/ML demos, experiments and code snippets"
+# baseurl: "/sample-ai-possibilities"
+baseurl: ""
+url: "https://aws-samples.github.io"
+repository: "aws-samples/sample-ai-possibilities"
+footer: "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+# Collections
+collections:
+  demos:
+    output: true
+    permalink: /demos/:name
+  experiments:
+    output: true
+    permalink: /experiments/:name
+  snippets:
+    output: true
+    permalink: /snippets/:name
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "demos"
+    values:
+      layout: "demo"
+  - scope:
+      path: ""
+      type: "experiments"
+    values:
+      layout: "default"
+  - scope:
+      path: ""
+      type: "snippets"
+    values:
+      layout: "default"
+
+# Plugins
+plugins:
+  - jekyll-seo-tag
+  
+# Exclude files
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - CONTRIBUTING.md
+  - LICENSE
+  - CODE_OF_CONDUCT.md
