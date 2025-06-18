@@ -334,8 +334,8 @@ Before running the application, you must create a Knowledge Base in Amazon Bedro
 
 1. **Clone the repository**:
 ```bash
-git clone <repository-url>
-cd <repository-name>
+git clone https://github.com/aws-samples/sample-ai-possibilities.git
+cd sample-ai-possibilities/demos/health-voice-ai-agent-websocket-nodejs
 ```
 
 2. **Install dependencies**:
@@ -354,8 +354,8 @@ nano .env
 
 4. **Configure AWS credentials**:
 ```bash
-# Configure AWS CLI with your credentials
-aws configure --profile your-profile-name
+# Configure AWS CLI with your credentials - we recommend using IAM role whenever possible
+aws configure
 ```
 
 5. **Build the TypeScript backend**:
