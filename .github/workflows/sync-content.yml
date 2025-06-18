@@ -1,0 +1,216 @@
+name: Auto-sync Jekyll Content
+
+on:
+  push:
+    paths:
+      - 'demos/**/README.md'
+      - 'experiments/**/README.md'
+      - 'snippets/**/*.md'
+      - 'snippets/**/*.py'
+  workflow_dispatch:
+
+jobs:
+  sync-content:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
+      - name: Create sync script
+        run: |
+          cat > sync_content.py << 'SCRIPT_END'
+          import os
+          import re
+          from datetime import datetime
+          from pathlib import Path
+          
+          # Create directories if they don't exist
+          Path("_demos").mkdir(exist_ok=True)
+          Path("_experiments").mkdir(exist_ok=True)
+          Path("_snippets").mkdir(exist_ok=True)
+          
+          # Sync demos
+          if Path("demos").exists():
+              for demo_dir in Path("demos").iterdir():
+                  if demo_dir.is_dir() and (demo_dir / "README.md").exists():
+                      readme_path = demo_dir / "README.md"
+                      content = readme_path.read_text()
+                      
+                      # Extract title from first # heading
+                      title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
+                      title = title_match.group(1) if title_match else demo_dir.name
+                      
+                      # Extract metadata from content
+                      tags = []
+                      if "## Tags" in content:
+                          tags_section = content.split("## Tags")[1].split("##")[0]
+                          tags = [tag.strip("- \n") for tag in tags_section.strip().split("\n") if tag.strip()]
+                      
+                      technologies = []
+                      if "## Technologies" in content:
+                          tech_section = content.split("## Technologies")[1].split("##")[0]
+                          technologies = [tech.strip("- \n") for tech in tech_section.strip().split("\n") if tech.strip()]
+                      
+                      difficulty = "medium"
+                      if "## Difficulty" in content:
+                          diff_section = content.split("## Difficulty")[1].split("##")[0]
+                          difficulty = diff_section.strip().lower()
+                      
+                      # Get description (first paragraph after title)
+                      desc_match = re.search(r'^# .+\n\n(.+)$', content, re.MULTILINE)
+                      description = desc_match.group(1) if desc_match else "Demo showcasing AI capabilities"
+                      
+                      # Format tags and technologies as YAML lists
+                      tags_yaml = "\n".join([f"  - {tag}" for tag in tags]) if tags else ""
+                      tech_yaml = "\n".join([f"  - {tech}" for tech in technologies]) if technologies else ""
+                      
+                      # Create Jekyll file with proper front matter
+                      jekyll_content = f"""---
+          title: "{title}"
+          date: {datetime.now().strftime('%Y-%m-%d')}
+          description: "{description}"
+          layout: demo
+          difficulty: {difficulty}
+          source_folder: "demos/{demo_dir.name}"
+          """
+                      
+                      if tags_yaml:
+                          jekyll_content += f"\ntags:\n{tags_yaml}"
+                      
+                      if tech_yaml:
+                          jekyll_content += f"\ntechnologies:\n{tech_yaml}"
+                      
+                      jekyll_content += f"""
+          ---
+          
+          {content}
+          
+          <div class='source-links'>
+            <h3>Full Source Code</h3>
+            <a href='https://github.com/aws-samples/sample-ai-possibilities/tree/main/demos/{demo_dir.name}' class='btn btn-primary'>
+              View on GitHub
+            </a>
+          </div>
+          """
+                      
+                      # Clean up extra indentation
+                      jekyll_content = jekyll_content.replace("\n          ", "\n")
+                      
+                      # Write to _demos
+                      output_path = Path("_demos") / f"{demo_dir.name}.md"
+                      output_path.write_text(jekyll_content)
+                      print(f"Synced demo: {demo_dir.name}")
+          
+          # Sync experiments
+          if Path("experiments").exists():
+              for exp_dir in Path("experiments").iterdir():
+                  if exp_dir.is_dir() and (exp_dir / "README.md").exists():
+                      readme_path = exp_dir / "README.md"
+                      content = readme_path.read_text()
+                      
+                      title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
+                      title = title_match.group(1) if title_match else exp_dir.name
+                      
+                      jekyll_content = f"""---
+          title: "{title}"
+          date: {datetime.now().strftime('%Y-%m-%d')}
+          layout: experiment
+          source_folder: "experiments/{exp_dir.name}"
+          ---
+          
+          {content}
+          
+          <div class='source-links'>
+            <h3>View Source</h3>
+            <a href='https://github.com/aws-samples/sample-ai-possibilities/tree/main/experiments/{exp_dir.name}' class='btn btn-primary'>
+              View on GitHub
+            </a>
+          </div>
+          """
+                      
+                      # Clean up indentation
+                      jekyll_content = jekyll_content.replace("\n          ", "\n")
+                      
+                      output_path = Path("_experiments") / f"{exp_dir.name}.md"
+                      output_path.write_text(jekyll_content)
+                      print(f"Synced experiment: {exp_dir.name}")
+          
+          # Sync snippets
+          if Path("snippets").exists():
+              for snippet_file in Path("snippets").iterdir():
+                  if snippet_file.suffix in ['.py', '.md']:
+                      content = snippet_file.read_text()
+                      
+                      if snippet_file.suffix == '.py':
+                          # Extract docstring
+                          docstring_match = re.search(r'"""(.+?)"""', content, re.DOTALL)
+                          description = docstring_match.group(1).strip() if docstring_match else "Code snippet"
+                          
+                          jekyll_content = f"""---
+          title: "{snippet_file.stem.replace('-', ' ').replace('_', ' ').title()}"
+          date: {datetime.now().strftime('%Y-%m-%d')}
+          layout: snippet
+          language: python
+          description: "{description}"
+          source_file: "snippets/{snippet_file.name}"
+          ---
+          
+          # {snippet_file.stem.replace('-', ' ').replace('_', ' ').title()}
+          
+          {description}
+          
+          ```python
+          {content}
+          ```
+          
+          <div class='source-links'>
+            <a href='https://github.com/aws-samples/sample-ai-possibilities/blob/main/snippets/{snippet_file.name}' class='btn btn-primary'>
+              View Raw File
+            </a>
+          </div>
+          """
+                      else:
+                          jekyll_content = f"""---
+          title: "{snippet_file.stem.replace('-', ' ').replace('_', ' ').title()}"
+          date: {datetime.now().strftime('%Y-%m-%d')}
+          layout: snippet
+          source_file: "snippets/{snippet_file.name}"
+          ---
+          
+          {content}
+          """
+                      
+                      # Clean up indentation
+                      jekyll_content = jekyll_content.replace("\n          ", "\n")
+                      
+                      output_path = Path("_snippets") / f"{snippet_file.stem}.md"
+                      output_path.write_text(jekyll_content)
+                      print(f"Synced snippet: {snippet_file.name}")
+          
+          print("\nContent sync complete!")
+          SCRIPT_END
+      
+      - name: Run sync script
+        run: python sync_content.py
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add _demos/ _experiments/ _snippets/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-sync content from source folders [skip ci]"
+            git push
+          fi
