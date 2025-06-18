@@ -1,8 +1,7 @@
 # Site settings
 title: "AI Possibilities Samples"
 description: "AWS AI/ML demos, experiments and code snippets"
-# baseurl: "/sample-ai-possibilities"
-baseurl: ""
+baseurl: "/sample-ai-possibilities"
 url: "https://aws-samples.github.io"
 repository: "aws-samples/sample-ai-possibilities"
 footer: "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved"
