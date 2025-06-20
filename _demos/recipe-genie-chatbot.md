@@ -1,6 +1,6 @@
 ---
 title: "Recipe Genie - Real-time Data Integration with Amazon Bedrock Agents and MCP"
-date: 2025-06-18
+date: 2025-06-20
 description: "An AI-powered recipe chatbot that demonstrates real-time data integration using Amazon Bedrock Agents, Strands SDK, and Model Context Protocol (MCP)."
 layout: demo
 difficulty: medium
@@ -41,6 +41,8 @@ Recipe Genie showcases how to build intelligent AI agents that can access real-t
 - Demonstrates the Strands Agents SDK for simplified agent development
 
 This architecture pattern is valuable for building AI applications that need to combine language models with real-time data access, external APIs, or dynamic information sources. The MCP protocol provides a standardized way to expose tools and data to AI agents, making it easier to build modular, extensible AI systems.
+
+![Webserver UI](images/UI.png)
 
 ## Tags
 
