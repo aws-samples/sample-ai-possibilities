@@ -12,6 +12,8 @@ Recipe Genie showcases how to build intelligent AI agents that can access real-t
 
 This architecture pattern is valuable for building AI applications that need to combine language models with real-time data access, external APIs, or dynamic information sources. The MCP protocol provides a standardized way to expose tools and data to AI agents, making it easier to build modular, extensible AI systems.
 
+![Webserver UI](images/UI.png)
+
 ## Tags
 
 - bedrock
