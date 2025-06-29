@@ -1,3 +1,4 @@
+//./components/RecipeGenieChat
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, ChefHat, ShoppingCart, Loader2, Sparkles } from 'lucide-react';
 
