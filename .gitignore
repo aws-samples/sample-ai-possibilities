@@ -39,6 +39,9 @@
 **/build/
 **/out/
 
+# SAM
+**/.aws-sam
+
 # dotenv environment files
 **/.env
 **/.env.*  # catch .env.local, .env.production, etc.
