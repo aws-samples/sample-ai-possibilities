@@ -108,8 +108,8 @@ export MCP_HOST=localhost
 export MCP_PORT=8009
 
 # Agent API Configuration  
-export API_HOST=0.0.0.0
-export API_PORT=8080
+export API_HOST=localhost
+export API_PORT=8090
 
 # Optional: Cohere for enhanced embeddings
 export COHERE_API_KEY=your-cohere-api-key
