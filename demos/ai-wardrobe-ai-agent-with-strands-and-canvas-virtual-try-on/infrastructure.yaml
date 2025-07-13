@@ -195,29 +195,6 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: '*'
 
-  # IAM User for Local Development
-  LocalDevelopmentUser:
-    Type: AWS::IAM::User
-    Properties:
-      UserName: !Sub '${EnvironmentName}-dev-user'
-      Policies:
-        - PolicyName: LocalDevPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 's3:*'
-                  - 'dynamodb:*'
-                  - 'bedrock:*'
-                Resource: '*'
-
-  # Access Key for Local Development
-  LocalDevelopmentAccessKey:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      UserName: !Ref LocalDevelopmentUser
-
 Outputs:
   BucketName:
     Description: Name of the S3 bucket for wardrobe images
@@ -248,11 +225,3 @@ Outputs:
     Value: !GetAtt ApplicationRole.Arn
     Export:
       Name: !Sub '${EnvironmentName}-application-role-arn'
-
-  AccessKeyId:
-    Description: Access Key ID for local development
-    Value: !Ref LocalDevelopmentAccessKey
-
-  SecretAccessKey:
-    Description: Secret Access Key for local development
-    Value: !GetAtt LocalDevelopmentAccessKey.SecretAccessKey
