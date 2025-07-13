@@ -1,0 +1,535 @@
+/* Wardrobe Theme Styles */
+
+:root {
+  --wardrobe-wood-dark: #5a3a1a;
+  --wardrobe-wood-medium: #8b6237;
+  --wardrobe-wood-light: #c9a875;
+  --wardrobe-brass: #b8860b;
+  --wardrobe-fabric: #f5f5dc;
+  --wardrobe-shadow: rgba(0, 0, 0, 0.3);
+  --frame-wood: #8B4513;
+  --frame-highlight: #CD853F;
+  --frame-shadow: #2F1B14;
+}
+
+/* Wardrobe wood texture background */
+.wardrobe-texture {
+  background-image: 
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(90, 58, 26, 0.05) 2px,
+      rgba(90, 58, 26, 0.05) 4px
+    ),
+    linear-gradient(
+      135deg,
+      #f8f7f3 0%,
+      #f5f4f0 50%,
+      #f8f7f3 100%
+    );
+}
+
+/* Wood panel effect */
+.wood-panel {
+  background: linear-gradient(180deg, 
+    var(--wardrobe-wood-medium) 0%, 
+    var(--wardrobe-wood-dark) 50%, 
+    var(--wardrobe-wood-medium) 100%
+  );
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Wardrobe door effect */
+.wardrobe-door {
+  background: linear-gradient(180deg, 
+    #f9f8f5 0%, 
+    #ebe9e3 50%, 
+    #f9f8f5 100%
+  );
+  border: 3px solid var(--wardrobe-wood-medium);
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.05),
+    0 4px 8px var(--wardrobe-shadow);
+  position: relative;
+}
+
+.wardrobe-door::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 40px;
+  background: var(--wardrobe-brass);
+  border-radius: 20px;
+  box-shadow: 
+    inset 0 0 3px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Drawer effect */
+.wardrobe-drawer {
+  background: linear-gradient(180deg, 
+    #faf9f6 0%, 
+    #ece9e4 100%
+  );
+  border: 2px solid var(--wardrobe-wood-medium);
+  border-radius: 4px;
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.wardrobe-drawer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 8px;
+  background: var(--wardrobe-brass);
+  border-radius: 4px;
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Clothing hanger effect */
+.hanger-hook {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  margin: 0 auto 10px;
+}
+
+.hanger-hook::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--wardrobe-brass);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+
+.hanger-hook::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: var(--wardrobe-brass);
+  border-radius: 2px;
+}
+
+/* Closet interior */
+.closet-interior {
+  background: 
+    radial-gradient(ellipse at top, rgba(255, 255, 255, 0.1) 0%, transparent 70%),
+    linear-gradient(180deg, #3a3833 0%, #2c2925 100%);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Clothing rack */
+.clothing-rack {
+  position: relative;
+  padding-top: 20px;
+}
+
+/* Hanging clothes animation */
+.clothing-item {
+  animation: hangingClothes 6s ease-in-out infinite;
+}
+
+.clothing-item:nth-child(2n) {
+  animation-delay: -2s;
+}
+
+.clothing-item:nth-child(3n) {
+  animation-delay: -4s;
+}
+
+@keyframes hangingClothes {
+  0%, 100% {
+    transform: rotate(-0.5deg) translateY(0px);
+  }
+  33% {
+    transform: rotate(0.5deg) translateY(-1px);
+  }
+  66% {
+    transform: rotate(-0.3deg) translateY(1px);
+  }
+}
+
+.clothing-rack::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(180deg,
+    #c0c0c0 0%,
+    #808080 50%,
+    #c0c0c0 100%
+  );
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Animated wardrobe door opening */
+@keyframes wardrobeDoorOpen {
+  from {
+    transform: perspective(1000px) rotateY(0deg);
+  }
+  to {
+    transform: perspective(1000px) rotateY(-25deg);
+  }
+}
+
+.wardrobe-door-animated {
+  transform-origin: left center;
+  animation: wardrobeDoorOpen 0.8s ease-out forwards;
+}
+
+/* Fabric texture for clothing items */
+.fabric-texture {
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 1px,
+      rgba(0, 0, 0, 0.03) 1px,
+      rgba(0, 0, 0, 0.03) 2px
+    );
+}
+
+/* Mirror effect */
+.wardrobe-mirror {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  border: 4px solid var(--wardrobe-wood-medium);
+  box-shadow: 
+    inset 0 0 20px rgba(255, 255, 255, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.wardrobe-mirror::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg);
+  animation: mirrorShine 3s ease-in-out infinite;
+}
+
+@keyframes mirrorShine {
+  0%, 100% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  50% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* Painting Frame Effect */
+.painting-frame {
+  position: relative;
+  display: inline-block;
+}
+
+.frame-border {
+  position: relative;
+  padding: 8px;
+  background: linear-gradient(145deg, #8B4513 0%, #CD853F 25%, #D2691E 50%, #CD853F 75%, #8B4513 100%);
+  border-radius: 4px;
+  box-shadow: 
+    inset 0 2px 4px rgba(255, 215, 0, 0.3),
+    inset 0 -2px 4px rgba(139, 69, 19, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: rotate(-2deg);
+  transition: transform 0.3s ease;
+}
+
+.painting-frame:hover .frame-border {
+  transform: rotate(0deg);
+}
+
+.frame-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  object-position: center 25%; /* Smart positioning for faces */
+  border-radius: 2px;
+  border: 2px solid #2F1B14;
+  display: block;
+}
+
+.frame-highlight-top {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.6) 50%, transparent 100%);
+  border-radius: 1px;
+}
+
+.frame-highlight-left {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  bottom: 2px;
+  width: 3px;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 215, 0, 0.4) 50%, transparent 100%);
+  border-radius: 1px;
+}
+
+.hanging-wire {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #4A4A4A 20%, #666666 50%, #4A4A4A 80%, transparent 100%);
+  border-radius: 1px;
+}
+
+.hanging-wire::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 2px;
+  right: 2px;
+  height: 1px;
+  background: #333333;
+  border-radius: 0.5px;
+}
+
+.hanging-wire::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 6px;
+  background: #8B4513;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Wall Portrait Effect */
+.wardrobe-wall-portrait {
+  position: relative;
+  height: fit-content;
+  padding: 20px 0;
+}
+
+.wall-portrait-frame {
+  position: relative;
+  display: inline-block;
+  transform: rotate(-1deg);
+  transition: transform 0.5s ease;
+  animation: wallPortraitFloat 8s ease-in-out infinite;
+}
+
+.wall-portrait-frame:hover {
+  transform: rotate(0deg) scale(1.02);
+}
+
+.portrait-border {
+  position: relative;
+  padding: 12px;
+  background: linear-gradient(145deg, 
+    var(--frame-wood) 0%, 
+    var(--frame-highlight) 15%, 
+    #DEB887 30%, 
+    var(--frame-highlight) 50%, 
+    #D2691E 70%, 
+    var(--frame-highlight) 85%, 
+    var(--frame-wood) 100%
+  );
+  border-radius: 8px;
+  box-shadow: 
+    inset 0 3px 6px rgba(255, 215, 0, 0.4),
+    inset 0 -3px 6px rgba(139, 69, 19, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.portrait-image {
+  width: 280px;
+  max-height: 420px; /* Allow variable height */
+  min-height: 280px; /* Minimum height to maintain frame proportions */
+  object-fit: cover;
+  object-position: center 25%; /* Smart positioning for faces */
+  border-radius: 4px;
+  border: 3px solid var(--frame-shadow);
+  display: block;
+  filter: sepia(0.1) contrast(1.1) brightness(1.05);
+}
+
+/* Adaptive sizing based on image aspect ratio */
+.portrait-container {
+  position: relative;
+  width: 280px;
+  transition: all 0.3s ease;
+}
+
+/* For portrait images (taller than wide) - show more height */
+.portrait-container.aspect-portrait .portrait-image {
+  height: 400px;
+  object-position: center 20%;
+}
+
+/* For square-ish images - balanced approach */
+.portrait-container.aspect-square .portrait-image {
+  height: 350px;
+  object-position: center 25%;
+}
+
+/* For landscape images (wider than tall) - shorter frame, focus on top */
+.portrait-container.aspect-landscape .portrait-image {
+  height: 280px;
+  object-position: center 15%;
+}
+
+.portrait-nameplate {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #8B4513 0%, #CD853F 100%);
+  color: #FFD700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 215, 0, 0.3);
+  border: 1px solid #654321;
+}
+
+.frame-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #FFD700 30%, #B8860B 70%);
+  border-radius: 50%;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.frame-corner.top-left {
+  top: 4px;
+  left: 4px;
+}
+
+.frame-corner.top-right {
+  top: 4px;
+  right: 4px;
+}
+
+.frame-corner.bottom-left {
+  bottom: 4px;
+  left: 4px;
+}
+
+.frame-corner.bottom-right {
+  bottom: 4px;
+  right: 4px;
+}
+
+.wall-hanging-wire {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    #4A4A4A 10%, 
+    #666666 50%, 
+    #4A4A4A 90%, 
+    transparent 100%
+  );
+  border-radius: 1px;
+}
+
+.wall-hanging-wire::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: #333333;
+  border-radius: 0.5px;
+}
+
+.wall-nail {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #C0C0C0 30%, #808080 100%);
+  border-radius: 50%;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.wall-nail::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 3px;
+  background: #666666;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes wallPortraitFloat {
+  0%, 100% {
+    transform: rotate(-1deg) translateY(0px);
+  }
+  50% {
+    transform: rotate(-0.5deg) translateY(-2px);
+  }
+}

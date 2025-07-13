@@ -1,0 +1,804 @@
+/* Modern Fashion Theme - AI Wardrobe 2.0 */
+
+:root {
+  /* Professional Color Palette */
+  --fashion-primary: #1f2937;        /* Gray 800 - Professional Dark */
+  --fashion-secondary: #6366f1;      /* Indigo 500 - Modern AI */
+  --fashion-accent: #ec4899;         /* Pink 500 - Fashion Touch */
+  --fashion-accent-alt: #8b5cf6;     /* Purple 500 - Creative */
+  --fashion-tertiary: #10b981;       /* Emerald 500 - Success */
+  
+  /* Extended Colors */
+  --fashion-gold: #f59e0b;           /* Amber 500 */
+  --fashion-indigo: #4338ca;         /* Indigo 700 */
+  --fashion-rose: #f43f5e;           /* Rose 500 */
+  --fashion-emerald: #059669;        /* Emerald 600 */
+  
+  /* Neutral Palette */
+  --fashion-white: #ffffff;
+  --fashion-off-white: #fefefe;
+  --fashion-light-gray: #f9fafb;     /* Gray 50 */
+  --fashion-gray: #e5e7eb;           /* Gray 200 */
+  --fashion-medium-gray: #6b7280;    /* Gray 500 */
+  --fashion-dark-gray: #374151;      /* Gray 700 */
+  --fashion-charcoal: #1f2937;       /* Gray 800 */
+  
+  /* Semantic Colors */
+  --fashion-success: #10b981;
+  --fashion-warning: #f59e0b;
+  --fashion-error: #ef4444;
+  --fashion-info: #3b82f6;
+  
+  /* Clean Gradients */
+  --fashion-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --fashion-gradient-accent: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+  --fashion-gradient-dark: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+  --fashion-gradient-light: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  --fashion-gradient-hero: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  --fashion-gradient-warm: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  
+  /* Professional Shadows */
+  --fashion-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --fashion-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --fashion-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --fashion-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --fashion-shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+  --fashion-shadow-colored: 0 8px 32px rgba(139, 92, 246, 0.15);
+  
+  /* Typography */
+  --fashion-font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --fashion-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --fashion-font-accent: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Spacing */
+  --fashion-spacing-xs: 0.5rem;
+  --fashion-spacing-sm: 1rem;
+  --fashion-spacing-md: 1.5rem;
+  --fashion-spacing-lg: 2rem;
+  --fashion-spacing-xl: 3rem;
+  
+  /* Border Radius */
+  --fashion-radius-sm: 0.375rem;
+  --fashion-radius-md: 0.5rem;
+  --fashion-radius-lg: 1rem;
+  --fashion-radius-xl: 1.5rem;
+  --fashion-radius-full: 9999px;
+  
+  /* Animation */
+  --fashion-transition-fast: 150ms ease;
+  --fashion-transition-base: 300ms ease;
+  --fashion-transition-slow: 500ms ease;
+}
+
+/* Clean Background Design */
+.fashion-background {
+  background: var(--fashion-light-gray);
+  position: relative;
+  min-height: 100vh;
+}
+
+.fashion-background::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.02) 0%, transparent 30%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Glass Morphism Effect */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--fashion-shadow-lg);
+}
+
+.glass-panel-dark {
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--fashion-shadow-xl);
+}
+
+/* Modern Card Design */
+.fashion-card {
+  background: var(--fashion-white);
+  border-radius: var(--fashion-radius-lg);
+  box-shadow: var(--fashion-shadow);
+  transition: all var(--fashion-transition-base);
+  border: 1px solid var(--fashion-gray);
+}
+
+.fashion-card:hover {
+  box-shadow: var(--fashion-shadow-lg);
+  transform: translateY(-2px);
+  border-color: var(--fashion-secondary);
+}
+
+/* Premium Button Styles */
+.btn-fashion-primary {
+  background: var(--fashion-gradient-primary);
+  color: var(--fashion-white);
+  padding: 0.875rem 2rem;
+  border-radius: var(--fashion-radius-lg);
+  font-weight: 600;
+  font-family: var(--fashion-font-accent);
+  font-size: 0.925rem;
+  letter-spacing: 0.025em;
+  transition: all var(--fashion-transition-base);
+  box-shadow: var(--fashion-shadow-lg);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-transform: none;
+}
+
+.btn-fashion-primary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translate(-50%, -50%);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1), height 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-fashion-primary:hover::before {
+  width: 320px;
+  height: 320px;
+}
+
+.btn-fashion-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--fashion-shadow-xl), var(--fashion-shadow-colored);
+}
+
+.btn-fashion-primary:active {
+  transform: translateY(-1px) scale(1.01);
+  transition: all 150ms ease;
+}
+
+.btn-fashion-secondary {
+  background: var(--fashion-white);
+  color: var(--fashion-secondary);
+  padding: 0.875rem 2rem;
+  border-radius: var(--fashion-radius-lg);
+  font-weight: 600;
+  font-family: var(--fashion-font-accent);
+  font-size: 0.925rem;
+  letter-spacing: 0.025em;
+  transition: all var(--fashion-transition-base);
+  border: 2px solid var(--fashion-secondary);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-fashion-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--fashion-gradient-primary);
+  transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+
+.btn-fashion-secondary:hover::before {
+  left: 0;
+}
+
+.btn-fashion-secondary:hover {
+  color: var(--fashion-white);
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: var(--fashion-shadow-glow);
+}
+
+/* Fashion Icon Container */
+.fashion-icon-container {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fashion-gradient-primary);
+  border-radius: var(--fashion-radius-md);
+  box-shadow: var(--fashion-shadow);
+}
+
+.fashion-icon-container img {
+  width: 1.5rem;
+  height: 1.5rem;
+  filter: brightness(0) invert(1);
+}
+
+/* Section Headers */
+.fashion-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fashion-spacing-sm);
+  margin-bottom: var(--fashion-spacing-md);
+}
+
+.fashion-section-title {
+  font-family: var(--fashion-font-display);
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--fashion-primary);
+  letter-spacing: -0.025em;
+}
+
+.fashion-section-subtitle {
+  font-family: var(--fashion-font-body);
+  font-size: 1rem;
+  color: var(--fashion-medium-gray);
+  margin-top: 0.25rem;
+}
+
+/* AI Badge */
+.ai-powered-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--fashion-gradient-primary);
+  color: var(--fashion-white);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--fashion-radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ai-powered-badge::before {
+  content: '✨';
+  font-size: 1rem;
+}
+
+/* Modern Grid Layout - Fixed for Better Chat Visibility */
+.fashion-grid {
+  display: grid;
+  gap: var(--fashion-spacing-lg);
+}
+
+.fashion-grid-main {
+  grid-template-columns: minmax(280px, 300px) 1fr minmax(320px, 400px);
+  gap: var(--fashion-spacing-md);
+  min-height: 70vh;
+  align-items: start;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1400px) {
+  .fashion-grid-main {
+    grid-template-columns: minmax(260px, 280px) 1fr minmax(300px, 360px);
+    gap: var(--fashion-spacing-sm);
+  }
+}
+
+@media (max-width: 1200px) {
+  .fashion-grid-main {
+    grid-template-columns: 1fr;
+    gap: var(--fashion-spacing-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .fashion-grid-main {
+    gap: var(--fashion-spacing-sm);
+    padding: 0 var(--fashion-spacing-sm);
+  }
+}
+
+/* Professional Animations */
+@keyframes fashion-float {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  25% { transform: translateY(-8px) translateX(3px); }
+  50% { transform: translateY(-12px) translateX(0px); }
+  75% { transform: translateY(-6px) translateX(-3px); }
+}
+
+@keyframes fashion-pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fashion-slide-up {
+  from { 
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fashion-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fashion-scale-in {
+  from { 
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fashion-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fashion-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes gentle-pulse {
+  0%, 100% { 
+    border-color: #6366f1;
+    box-shadow: var(--fashion-shadow-xl);
+  }
+  50% { 
+    border-color: #8b5cf6;
+    box-shadow: var(--fashion-shadow-xl), 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+}
+
+/* Animation Classes */
+.animate-float {
+  animation: fashion-float 4s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: fashion-pulse 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: fashion-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-fade-in {
+  animation: fashion-fade-in 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: fashion-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: fashion-gradient-shift 4s ease infinite;
+}
+
+/* Outfit Builder Modern Style - Prominent & Discoverable */
+.outfit-builder-modern {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: var(--fashion-radius-xl);
+  box-shadow: var(--fashion-shadow-xl);
+  overflow: hidden;
+  border: 3px solid #6366f1;
+  position: relative;
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+.outfit-builder-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: var(--fashion-radius-xl);
+  padding: 2px;
+  background: var(--fashion-gradient-primary);
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--fashion-transition-base);
+  pointer-events: none;
+}
+
+.outfit-builder-modern:hover::before {
+  opacity: 1;
+}
+
+/* Chat Modern Style */
+.chat-modern {
+  background: var(--fashion-white);
+  border-radius: var(--fashion-radius-xl);
+  box-shadow: var(--fashion-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  background: var(--fashion-charcoal);
+  color: var(--fashion-white);
+  padding: var(--fashion-spacing-md);
+  border-radius: var(--fashion-radius-xl) var(--fashion-radius-xl) 0 0;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--fashion-spacing-md);
+}
+
+.chat-input-container {
+  padding: var(--fashion-spacing-md);
+  border-top: 1px solid var(--fashion-gray);
+}
+
+/* Fashion Item Card */
+.fashion-item-card {
+  background: var(--fashion-white);
+  border-radius: var(--fashion-radius-lg);
+  overflow: hidden;
+  transition: all var(--fashion-transition-base);
+  cursor: pointer;
+  position: relative;
+  box-shadow: var(--fashion-shadow-lg);
+  border: 1px solid var(--fashion-gray);
+}
+
+.fashion-item-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--fashion-gradient-primary);
+  opacity: 0;
+  transition: opacity var(--fashion-transition-base);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.fashion-item-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--fashion-shadow-xl), var(--fashion-shadow-colored);
+  border-color: var(--fashion-accent-alt);
+}
+
+.fashion-item-card:hover::before {
+  opacity: 0.05;
+}
+
+.fashion-item-card.selected {
+  border: 3px solid var(--fashion-accent-alt);
+  box-shadow: var(--fashion-shadow-glow);
+  transform: scale(1.03);
+}
+
+.fashion-item-card.selected::before {
+  opacity: 0.1;
+}
+
+/* Floating Portrait Container - Outside Grid */
+.floating-portrait-container {
+  position: fixed;
+  top: 6rem; /* Below header */
+  left: 2rem;
+  width: 280px;
+  max-width: 300px;
+  z-index: 20;
+  transition: all var(--fashion-transition-base);
+  
+  /* Subtle floating effect */
+  filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.12));
+}
+
+/* Enhance floating portrait on scroll */
+.floating-portrait-container:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.16));
+}
+
+/* Minimized state for floating portrait */
+.floating-portrait-container.minimized {
+  width: 60px;
+  transform: translateX(-240px); /* Slide most of it out of view */
+  transition: all var(--fashion-transition-base);
+}
+
+.floating-portrait-container.minimized:hover {
+  transform: translateX(-220px) translateY(-2px); /* Show a bit more on hover */
+}
+
+/* Portrait toggle button - Thin border design */
+.portrait-toggle-btn {
+  position: fixed;
+  top: 30vh; /* Positioned higher to align with middle of portrait image */
+  left: 302px; /* Right edge of the portrait container */
+  transform: translateY(-50%);
+  width: 6px;
+  height: 80px;
+  background: var(--fashion-gradient-primary);
+  border: none;
+  border-radius: 0 var(--fashion-radius-sm) var(--fashion-radius-sm) 0;
+  cursor: pointer;
+  transition: all var(--fashion-transition-base);
+  z-index: 50; /* Higher z-index to ensure visibility */
+  opacity: 0.8;
+  
+  /* Add a subtle chevron indicator */
+  overflow: visible;
+  
+  /* Ensure it's visible */
+  pointer-events: auto;
+}
+
+.portrait-toggle-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -2px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  transition: all var(--fashion-transition-base);
+}
+
+/* Expanded state chevron (pointing left) */
+.portrait-toggle-btn:not(.minimized)::before {
+  border-left: 6px solid var(--fashion-secondary);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+/* Minimized state chevron (pointing right) */
+.portrait-toggle-btn.minimized::before {
+  border-right: 6px solid var(--fashion-secondary);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  right: -8px;
+}
+
+.portrait-toggle-btn:hover {
+  width: 8px;
+  opacity: 1;
+  background: var(--fashion-gradient-accent);
+  box-shadow: var(--fashion-shadow-glow);
+  left: 300px;
+}
+
+.portrait-toggle-btn:hover::before {
+  border-left-color: var(--fashion-accent);
+  border-right-color: var(--fashion-accent);
+}
+
+.portrait-toggle-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Minimized state toggle button adjustments */
+.portrait-toggle-btn.minimized {
+  left: 20px; /* Position at left edge of screen */
+  border-radius: var(--fashion-radius-sm) 0 0 var(--fashion-radius-sm);
+}
+
+.portrait-toggle-btn.minimized:hover {
+  width: 8px;
+  left: 18px; /* Move slightly inward on hover */
+}
+
+/* Adjust grid for no portrait column */
+.fashion-grid-no-portrait {
+  grid-template-columns: 1fr minmax(320px, 400px) !important;
+  margin-left: 320px; /* Make room for floating portrait */
+  transition: margin-left var(--fashion-transition-base);
+}
+
+/* Adjust grid when portrait is minimized */
+.fashion-grid-no-portrait.portrait-minimized {
+  margin-left: 80px; /* Less margin when portrait is minimized */
+}
+
+/* Responsive behavior for floating portrait */
+@media (max-width: 1400px) {
+  .floating-portrait-container {
+    width: 240px;
+    left: 1rem;
+  }
+  
+  .fashion-grid-no-portrait {
+    margin-left: 260px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .floating-portrait-container {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+  
+  .fashion-grid-no-portrait {
+    grid-template-columns: 1fr !important;
+    margin-left: 0;
+  }
+}
+
+/* JavaScript sticky fallback */
+.portrait-container.js-sticky {
+  box-shadow: var(--fashion-shadow-xl);
+  transform: scale(0.95);
+  transition: all var(--fashion-transition-base);
+}
+
+/* Portrait container styling */
+.portrait-container {
+  width: 100%;
+  height: auto;
+}
+
+/* Enhanced sticky behavior on smaller screens */
+@media (max-width: 1200px) {
+  .sticky-portrait-container {
+    position: relative;
+    top: auto;
+    z-index: auto;
+  }
+}
+
+@media (min-width: 1201px) {
+  .sticky-portrait-container:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--fashion-shadow-xl);
+  }
+  
+  .sticky-portrait-container .virtual-tryon-preview {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  /* Scrolled state effects */
+  .sticky-portrait-container .portrait-container.scrolled {
+    transform: scale(0.95);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+  }
+  
+  .sticky-portrait-container .portrait-container.scrolled::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, var(--fashion-secondary), var(--fashion-accent));
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0.3;
+    animation: gentle-pulse 2s ease-in-out infinite;
+  }
+}
+
+/* Virtual Try-On Preview */
+.virtual-tryon-preview {
+  position: relative;
+  border-radius: var(--fashion-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--fashion-shadow-xl);
+  transition: all var(--fashion-transition-base);
+  width: 100%;
+  height: auto;
+  max-height: 70vh; /* Limit height for floating behavior */
+}
+
+/* Ensure image scales properly within sticky container */
+.sticky-portrait-container .virtual-tryon-preview img {
+  max-height: 60vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.virtual-tryon-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.virtual-tryon-controls {
+  position: absolute;
+  bottom: var(--fashion-spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--fashion-spacing-sm);
+  opacity: 0;
+  transition: opacity var(--fashion-transition-base);
+}
+
+.virtual-tryon-preview:hover .virtual-tryon-controls {
+  opacity: 1;
+}
+
+/* Modern Utility Classes */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hover-lift {
+  transition: transform var(--fashion-transition-base), box-shadow var(--fashion-transition-base);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--fashion-shadow-lg);
+}
+
+.text-gradient {
+  background: var(--fashion-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-gradient {
+  position: relative;
+  background: var(--fashion-white);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  margin: -2px;
+  border-radius: inherit;
+  background: var(--fashion-gradient-primary);
+}
+
+/* Focus States */
+.focus-visible:focus-visible {
+  outline: 2px solid var(--fashion-accent-alt);
+  outline-offset: 2px;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}

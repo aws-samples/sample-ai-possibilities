@@ -1,0 +1,258 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AI Wardrobe Infrastructure - DynamoDB tables, S3 bucket, and IAM roles'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: ai-wardrobe
+    Description: Environment name prefix for resources
+
+Resources:
+  # S3 Bucket for storing wardrobe images and virtual try-ons
+  WardrobeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${EnvironmentName}-images-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3000
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteTempUploads
+            Prefix: temp/
+            Status: Enabled
+            ExpirationInDays: 1
+
+  # DynamoDB Table for Users
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${EnvironmentName}-users'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: userName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: userName-index
+          KeySchema:
+            - AttributeName: userName
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # DynamoDB Table for Wardrobe Items
+  WardrobeItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${EnvironmentName}-wardrobe-items'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: itemId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+      KeySchema:
+        - AttributeName: itemId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: userId-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: itemId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: userId-category-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: category
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # DynamoDB Table for Outfits
+  OutfitsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${EnvironmentName}-outfits'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: outfitId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: outfitId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: userId-createdAt-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # IAM Role for Application
+  ApplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${EnvironmentName}-application-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+                - lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: WardrobeAppPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # S3 Permissions
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                  - 's3:ListBucket'
+                Resource:
+                  - !GetAtt WardrobeBucket.Arn
+                  - !Sub '${WardrobeBucket.Arn}/*'
+              
+              # DynamoDB Permissions
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:UpdateItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:BatchGetItem'
+                  - 'dynamodb:BatchWriteItem'
+                Resource:
+                  - !GetAtt UsersTable.Arn
+                  - !GetAtt WardrobeItemsTable.Arn
+                  - !GetAtt OutfitsTable.Arn
+                  - !Sub '${UsersTable.Arn}/index/*'
+                  - !Sub '${WardrobeItemsTable.Arn}/index/*'
+                  - !Sub '${OutfitsTable.Arn}/index/*'
+              
+              # Bedrock Permissions
+              - Effect: Allow
+                Action:
+                  - 'bedrock:InvokeModel'
+                  - 'bedrock:InvokeModelWithResponseStream'
+                Resource:
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/us.anthropic.claude-3-5-sonnet-20241022-v2:0'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-canvas-v1:0'
+              
+              # CloudWatch Logs
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
+  # IAM User for Local Development
+  LocalDevelopmentUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub '${EnvironmentName}-dev-user'
+      Policies:
+        - PolicyName: LocalDevPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                  - 'dynamodb:*'
+                  - 'bedrock:*'
+                Resource: '*'
+
+  # Access Key for Local Development
+  LocalDevelopmentAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref LocalDevelopmentUser
+
+Outputs:
+  BucketName:
+    Description: Name of the S3 bucket for wardrobe images
+    Value: !Ref WardrobeBucket
+    Export:
+      Name: !Sub '${EnvironmentName}-bucket-name'
+
+  UsersTableName:
+    Description: Name of the DynamoDB Users table
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub '${EnvironmentName}-users-table'
+
+  WardrobeItemsTableName:
+    Description: Name of the DynamoDB Wardrobe Items table
+    Value: !Ref WardrobeItemsTable
+    Export:
+      Name: !Sub '${EnvironmentName}-wardrobe-items-table'
+
+  OutfitsTableName:
+    Description: Name of the DynamoDB Outfits table
+    Value: !Ref OutfitsTable
+    Export:
+      Name: !Sub '${EnvironmentName}-outfits-table'
+
+  ApplicationRoleArn:
+    Description: ARN of the application IAM role
+    Value: !GetAtt ApplicationRole.Arn
+    Export:
+      Name: !Sub '${EnvironmentName}-application-role-arn'
+
+  AccessKeyId:
+    Description: Access Key ID for local development
+    Value: !Ref LocalDevelopmentAccessKey
+
+  SecretAccessKey:
+    Description: Secret Access Key for local development
+    Value: !GetAtt LocalDevelopmentAccessKey.SecretAccessKey
