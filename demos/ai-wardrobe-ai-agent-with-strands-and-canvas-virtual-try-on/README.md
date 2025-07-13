@@ -139,7 +139,6 @@ aws cloudformation describe-stacks \
   - `ai-unicorn-wardrobe-wardrobe-items` - Clothing item metadata with GSI for efficient querying
   - `ai-unicorn-wardrobe-outfits` - Saved outfit configurations and try-on results
 - **IAM Roles**: Application role with least-privilege access to required services
-- **Development User**: Local development access keys (rotate regularly in production)
 
 ### 2. Configure Environment
 
@@ -155,8 +154,8 @@ vim .env  # or use your preferred editor
 Due to security reasons it is recommended using IAM Role, however, if you prefer using local keys:
 ```bash
 # AWS Configuration
-AWS_ACCESS_KEY_ID=your_access_key_from_cloudformation_output
-AWS_SECRET_ACCESS_KEY=your_secret_key_from_cloudformation_output
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
 AWS_REGION=us-east-1 
 
 # Resource Names (from CloudFormation outputs)
