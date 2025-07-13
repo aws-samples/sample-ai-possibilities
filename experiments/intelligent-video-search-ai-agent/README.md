@@ -398,7 +398,7 @@ The test suite validates:
 ## 🚨 Important Disclaimers
 
 ### Educational Purpose
-This project is designed for **educational and demonstration purposes**. For production deployment:
+This project is designed for **educational and demonstration purposes**. In order to improve the security of this application, you may want to implement:
 - Implement proper authentication and authorization
 - Implement API rate control
 - APIs are currently running as python scripts to make it simple for you to test, in production you need a proper hosting for the APIs
