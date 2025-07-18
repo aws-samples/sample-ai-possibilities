@@ -67,9 +67,9 @@ jobs:
                           diff_section = content.split("## Difficulty")[1].split("##")[0]
                           difficulty = diff_section.strip().lower()
                       
-                      # Get description (first paragraph after title)
-                      desc_match = re.search(r'^# .+\n\n(.+)$', content, re.MULTILINE)
-                      description = desc_match.group(1) if desc_match else "Demo showcasing AI capabilities"
+                      # Get description (first paragraph after title, stop at next heading)
+                      desc_match = re.search(r'^# .+\n\n([^#]+?)(?:\n#|\n\n#|\Z)', content, re.MULTILINE | re.DOTALL)
+                      description = desc_match.group(1).strip() if desc_match else "Demo showcasing AI capabilities"
                       
                       # Format tags and technologies as YAML lists
                       tags_yaml = "\n".join([f"  - {tag}" for tag in tags]) if tags else ""
@@ -138,9 +138,17 @@ jobs:
                           diff_section = content.split("## Difficulty")[1].split("##")[0]
                           difficulty = diff_section.strip().lower()
                       
-                      # Get description (first paragraph after title)
-                      desc_match = re.search(r'^# .+\n\n(.+)$', content, re.MULTILINE)
-                      description = desc_match.group(1) if desc_match else "Experimental AI implementation"
+                      # Get description - try to get content under Overview section first
+                      description = "Experimental AI implementation"
+                      if "## Overview" in content:
+                          overview_match = re.search(r'## Overview\s*\n\n([^#]+?)(?:\n#|\n\n#|\Z)', content, re.MULTILINE | re.DOTALL)
+                          if overview_match:
+                              description = overview_match.group(1).strip()
+                      else:
+                          # Fallback to first paragraph after title
+                          desc_match = re.search(r'^# .+\n\n([^#]+?)(?:\n#|\n\n#|\Z)', content, re.MULTILINE | re.DOTALL)
+                          if desc_match:
+                              description = desc_match.group(1).strip()
                       
                       # Format tags and technologies as YAML lists
                       tags_yaml = "\n".join([f"  - {tag}" for tag in tags]) if tags else ""
@@ -262,9 +270,9 @@ jobs:
                               diff_section = content.split("## Difficulty")[1].split("##")[0]
                               difficulty = diff_section.strip().lower()
                           
-                          # Get description (first paragraph after title)
-                          desc_match = re.search(r'^# .+\n\n(.+)$', content, re.MULTILINE)
-                          description = desc_match.group(1) if desc_match else "Code snippet"
+                          # Get description (first paragraph after title, stop at next heading)
+                          desc_match = re.search(r'^# .+\n\n([^#]+?)(?:\n#|\n\n#|\Z)', content, re.MULTILINE | re.DOTALL)
+                          description = desc_match.group(1).strip() if desc_match else "Code snippet"
                           
                           # Format tags and technologies as YAML lists
                           tags_yaml = "\n".join([f"  - {tag}" for tag in tags]) if tags else ""
