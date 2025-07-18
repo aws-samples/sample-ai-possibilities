@@ -122,11 +122,46 @@ jobs:
                       title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
                       title = title_match.group(1) if title_match else exp_dir.name
                       
+                      # Extract metadata from content
+                      tags = []
+                      if "## Tags" in content:
+                          tags_section = content.split("## Tags")[1].split("##")[0]
+                          tags = [tag.strip("- \n") for tag in tags_section.strip().split("\n") if tag.strip()]
+                      
+                      technologies = []
+                      if "## Technologies" in content:
+                          tech_section = content.split("## Technologies")[1].split("##")[0]
+                          technologies = [tech.strip("- \n") for tech in tech_section.strip().split("\n") if tech.strip()]
+                      
+                      difficulty = "medium"
+                      if "## Difficulty" in content:
+                          diff_section = content.split("## Difficulty")[1].split("##")[0]
+                          difficulty = diff_section.strip().lower()
+                      
+                      # Get description (first paragraph after title)
+                      desc_match = re.search(r'^# .+\n\n(.+)$', content, re.MULTILINE)
+                      description = desc_match.group(1) if desc_match else "Experimental AI implementation"
+                      
+                      # Format tags and technologies as YAML lists
+                      tags_yaml = "\n".join([f"  - {tag}" for tag in tags]) if tags else ""
+                      tech_yaml = "\n".join([f"  - {tech}" for tech in technologies]) if technologies else ""
+                      
                       jekyll_content = f"""---
           title: "{title}"
           date: {datetime.now().strftime('%Y-%m-%d')}
+          description: "{description}"
           layout: experiment
+          difficulty: {difficulty}
           source_folder: "experiments/{exp_dir.name}"
+          """
+                      
+                      if tags_yaml:
+                          jekyll_content += f"\ntags:\n{tags_yaml}"
+                      
+                      if tech_yaml:
+                          jekyll_content += f"\ntechnologies:\n{tech_yaml}"
+                      
+                      jekyll_content += f"""
           ---
           
           {content}
@@ -211,16 +246,46 @@ jobs:
                           title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
                           title = title_match.group(1) if title_match else snippet_dir.name
                           
+                          # Extract metadata from content
+                          tags = []
+                          if "## Tags" in content:
+                              tags_section = content.split("## Tags")[1].split("##")[0]
+                              tags = [tag.strip("- \n") for tag in tags_section.strip().split("\n") if tag.strip()]
+                          
+                          technologies = []
+                          if "## Technologies" in content:
+                              tech_section = content.split("## Technologies")[1].split("##")[0]
+                              technologies = [tech.strip("- \n") for tech in tech_section.strip().split("\n") if tech.strip()]
+                          
+                          difficulty = "medium"
+                          if "## Difficulty" in content:
+                              diff_section = content.split("## Difficulty")[1].split("##")[0]
+                              difficulty = diff_section.strip().lower()
+                          
                           # Get description (first paragraph after title)
                           desc_match = re.search(r'^# .+\n\n(.+)$', content, re.MULTILINE)
                           description = desc_match.group(1) if desc_match else "Code snippet"
                           
+                          # Format tags and technologies as YAML lists
+                          tags_yaml = "\n".join([f"  - {tag}" for tag in tags]) if tags else ""
+                          tech_yaml = "\n".join([f"  - {tech}" for tech in technologies]) if technologies else ""
+                          
                           jekyll_content = f"""---
           title: "{title}"
           date: {datetime.now().strftime('%Y-%m-%d')}
-          layout: snippet
           description: "{description}"
+          layout: snippet
+          difficulty: {difficulty}
           source_folder: "snippets/{snippet_dir.name}"
+          """
+                          
+                          if tags_yaml:
+                              jekyll_content += f"\ntags:\n{tags_yaml}"
+                          
+                          if tech_yaml:
+                              jekyll_content += f"\ntechnologies:\n{tech_yaml}"
+                          
+                          jekyll_content += f"""
           ---
           
           {content}

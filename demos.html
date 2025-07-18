@@ -35,7 +35,6 @@ permalink: /demos/
       {% endif %}
       
       <div class="meta">
-        <span class="date">{{ demo.date | date: "%B %d, %Y" }}</span>
         {% if demo.difficulty %}
           <span class="difficulty difficulty-{{ demo.difficulty | downcase }}">
             {{ demo.difficulty }}
