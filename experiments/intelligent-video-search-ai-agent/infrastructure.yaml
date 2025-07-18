@@ -1,0 +1,519 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Video Ingestion Pipeline with Twelve Labs SDK and OpenSearch
+
+Parameters:
+  VideoBucketName:
+    Type: String
+    Description: S3 bucket name for video storage
+    Default: video-ingestion-pipeline-bucket
+  OpenSearchCollectionName:
+    Type: String
+    Default: video-insights-collection
+    Description: OpenSearch Serverless collection name
+  TwelveLabsApiKeySecret:
+    Type: String
+    Default: twelve-labs-api-key
+    Description: Secrets Manager secret name for Twelve Labs API key
+  IndexName:
+    Type: String
+    Default: video-insights-rag
+    Description: OpenSearch index name
+  AdditionalOpenSearchPrincipals:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: Additional IAM ARNs (users/roles) for OpenSearch access, comma-separated
+
+Conditions:
+  HasAdditionalPrincipals: !Not [!Equals [!Join ['', !Ref AdditionalOpenSearchPrincipals], '']]
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 900
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        PYTHONPATH: /var/runtime:/var/task:/opt/python
+
+Resources:
+  # S3 Bucket for Videos
+  VideoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref VideoBucketName
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldMetadata
+            Status: Enabled
+            Prefix: metadata/
+            ExpirationInDays: 90
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: ['*']
+
+  # EventBridge Rule for S3 Events
+  VideoUploadRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: VideoUploadTrigger
+      EventPattern:
+        source:
+          - aws.s3
+        detail-type:
+          - Object Created
+        detail:
+          bucket:
+            name:
+              - !Ref VideoBucket
+          object:
+            key:
+              - prefix: "videos/"
+          reason:
+            - PutObject
+            - CompleteMultipartUpload
+      State: ENABLED
+      Targets:
+        - Arn: !Ref VideoProcessingStateMachine
+          Id: VideoProcessingTarget
+          RoleArn: !GetAtt EventBridgeRole.Arn
+
+  # EventBridge Role
+  EventBridgeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource: !Ref VideoProcessingStateMachine
+
+  # IAM Role for Step Functions
+  StepFunctionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+      Policies:
+        - PolicyName: StepFunctionsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                  - sns:Publish
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:DescribeLogGroups
+                  - logs:DescribeResourcePolicies
+                  - logs:GetLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:UpdateLogDelivery
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub '${StateMachineLogGroup.Arn}:*'
+
+  # IAM Role for Lambda Functions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:GeneratePresignedUrl
+                Resource: 
+                  - !Sub '${VideoBucket.Arn}/*'
+                  - !Sub '${VideoBucket.Arn}/thumbnails/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !GetAtt VideoBucket.Arn
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${TwelveLabsApiKeySecret}*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:CreateSecret
+                  - secretsmanager:UpdateSecret
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:twelve-labs-index-id*'
+              - Effect: Allow
+                Action:
+                  - aoss:APIAccessAll
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - states:SendTaskSuccess
+                  - states:SendTaskFailure
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource: 
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/cohere.embed-english-v3'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-lite-v1:0'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-pro-v1:0'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0'
+              - Effect: Allow
+                Action:
+                  - transcribe:StartTranscriptionJob
+                  - transcribe:GetTranscriptionJob
+                  - transcribe:DeleteTranscriptionJob
+                Resource: '*'
+
+  # Lambda Functions
+  InitiateProcessingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-InitiateVideoProcessing'
+      CodeUri: lambdas/InitiateVideoProcessing/src/
+      Handler: main.handler
+      MemorySize: 1024
+      Timeout: 300
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          TWELVE_LABS_API_KEY_SECRET: !Ref TwelveLabsApiKeySecret
+          OPENSEARCH_ENDPOINT: !GetAtt OpenSearchCollection.CollectionEndpoint
+          INDEX_NAME: !Ref IndexName
+          REGION: !Ref AWS::Region
+    Metadata:
+      BuildMethod: python3.11
+
+  ExtractInsightsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-ExtractVideoInsights'
+      CodeUri: lambdas/ExtractInsightsFunction/src/
+      Handler: main.handler
+      MemorySize: 1024
+      Timeout: 900
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          TWELVE_LABS_API_KEY_SECRET: !Ref TwelveLabsApiKeySecret
+          OPENSEARCH_ENDPOINT: !GetAtt OpenSearchCollection.CollectionEndpoint
+          INDEX_NAME: !Ref IndexName
+          REGION: !Ref AWS::Region
+          COHERE_MODEL_ID: cohere.embed-english-v3
+          NOVA_MODEL_ID: amazon.nova-lite-v1:0
+          NOVA_MAX_CHARS: '350000'
+          MARENGO_MODEL_ID: 'marengo2.7'
+    Metadata:
+      BuildMethod: python3.11
+
+
+  # OpenSearch Serverless Collection
+  OpenSearchCollection:
+    Type: AWS::OpenSearchServerless::Collection
+    DependsOn:
+      - OpenSearchEncryptionPolicy
+      - OpenSearchNetworkPolicy
+    Properties:
+      Name: !Ref OpenSearchCollectionName
+      Type: VECTORSEARCH
+      Description: Video insights collection for RAG with SDK and vector search
+
+  # Data Access Policy for OpenSearch
+  OpenSearchDataAccessPolicy:
+    Type: AWS::OpenSearchServerless::AccessPolicy
+    Properties:
+      Name: !Sub '${OpenSearchCollectionName}-data'
+      Type: data
+      Policy: 
+        Fn::Sub:
+          - |
+            [
+              {
+                "Rules": [
+                  {
+                    "Resource": ["collection/${OpenSearchCollectionName}"],
+                    "Permission": [
+                      "aoss:CreateCollectionItems",
+                      "aoss:DeleteCollectionItems",
+                      "aoss:UpdateCollectionItems",
+                      "aoss:DescribeCollectionItems"
+                    ],
+                    "ResourceType": "collection"
+                  },
+                  {
+                    "Resource": ["index/${OpenSearchCollectionName}/*"],
+                    "Permission": [
+                      "aoss:CreateIndex",
+                      "aoss:DeleteIndex",
+                      "aoss:UpdateIndex",
+                      "aoss:DescribeIndex",
+                      "aoss:ReadDocument",
+                      "aoss:WriteDocument"
+                    ],
+                    "ResourceType": "index"
+                  }
+                ],
+                "Principal": ${Principals}
+              }
+            ]
+          - Principals: !If
+              - HasAdditionalPrincipals
+              - !Sub
+                - |
+                  [
+                    "${LambdaExecutionRole.Arn}",
+                    ${AdditionalPrincipals}
+                  ]
+                - AdditionalPrincipals: !Join
+                    - ','
+                    - !Split
+                      - ','
+                      - !Sub
+                        - '"${InnerItem}"'
+                        - InnerItem: !Join
+                          - '","'
+                          - !Ref AdditionalOpenSearchPrincipals
+              - !Sub '["${LambdaExecutionRole.Arn}"]'
+
+  # Network Policy for OpenSearch
+  OpenSearchNetworkPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub '${OpenSearchCollectionName}-net'
+      Type: network
+      Policy: !Sub |
+        [
+          {
+            "Rules": [
+              {
+                "Resource": ["collection/${OpenSearchCollectionName}"],
+                "ResourceType": "collection"
+              },
+              {
+                "Resource": ["collection/${OpenSearchCollectionName}"],
+                "ResourceType": "dashboard"
+              }
+            ],
+            "AllowFromPublic": true
+          }
+        ]
+
+  # Encryption Policy for OpenSearch
+  OpenSearchEncryptionPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub '${OpenSearchCollectionName}-enc'
+      Type: encryption
+      Policy: !Sub |
+        {
+          "Rules": [
+            {
+              "Resource": ["collection/${OpenSearchCollectionName}"],
+              "ResourceType": "collection"
+            }
+          ],
+          "AWSOwnedKey": true
+        }
+
+  # Step Functions State Machine
+  VideoProcessingStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub '${AWS::StackName}-VideoIngestionPipeline'
+      DefinitionString: !Sub |
+        {
+          "Comment": "Video Ingestion Pipeline with Twelve Labs SDK and OpenSearch",
+          "StartAt": "InitiateVideoProcessing",
+          "States": {
+            "InitiateVideoProcessing": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${InitiateProcessingFunction.Arn}",
+                "Payload.$": "$"
+              },
+              "ResultPath": "$.processing",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 5,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0,
+                  "MaxDelaySeconds": 60
+                }
+              ],
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "HandleProcessingError",
+                  "ResultPath": "$.error"
+                }
+              ],
+              "Next": "ExtractInsightsWithSDK"
+            },
+            "ExtractInsightsWithSDK": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${ExtractInsightsFunction.Arn}",
+                "Payload.$": "$.processing.Payload.body"
+              },
+              "ResultPath": "$.insights",
+              "TimeoutSeconds": 1800,
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 30,
+                  "MaxAttempts": 2,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "Next": "NotifyCompletion"
+            },
+            "NotifyCompletion": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "TopicArn": "${CompletionTopic}",
+                "Message": {
+                  "video_id.$": "$.insights.Payload.body.video_id",
+                  "status": "completed",
+                  "s3_bucket.$": "$.insights.Payload.body.s3_bucket",
+                  "s3_key.$": "$.insights.Payload.body.s3_key",
+                  "indexed": true,
+                  "sdk_version": "twelvelabs>=0.4.0"
+                }
+              },
+              "End": true
+            },
+            "HandleProcessingError": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "TopicArn": "${ErrorTopic}",
+                "Message": {
+                  "error.$": "$.error",
+                  "execution.$": "$$.Execution.Name",
+                  "timestamp.$": "$$.State.EnteredTime",
+                  "s3_bucket.$": "$.detail.bucket.name",
+                  "s3_key.$": "$.detail.object.key"
+                }
+              },
+              "Next": "FailState"
+            },
+            "FailState": {
+              "Type": "Fail",
+              "Error": "VideoProcessingFailed",
+              "Cause": "Video processing pipeline encountered an error"
+            }
+          }
+        }
+      RoleArn: !GetAtt StepFunctionsRole.Arn
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Level: ALL
+        IncludeExecutionData: true
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt StateMachineLogGroup.Arn
+
+  # CloudWatch Log Groups
+  StateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/stepfunctions/${AWS::StackName}-video-processing'
+      RetentionInDays: 30
+
+  # SNS Topics for Notifications
+  CompletionTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-video-processing-complete'
+      DisplayName: Video Processing Completion Notifications
+
+  ErrorTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-video-processing-errors'
+      DisplayName: Video Processing Error Notifications
+
+Outputs:
+  VideoBucketName:
+    Description: S3 bucket for video uploads
+    Value: !Ref VideoBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-VideoBucket'
+  
+  StateMachineArn:
+    Description: Step Functions state machine ARN
+    Value: !Ref VideoProcessingStateMachine
+    Export:
+      Name: !Sub '${AWS::StackName}-StateMachine'
+  
+  OpenSearchEndpoint:
+    Description: OpenSearch collection endpoint
+    Value: !GetAtt OpenSearchCollection.CollectionEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-OpenSearchEndpoint'
+  
+  
+  InitiateFunctionArn:
+    Description: Lambda function for initiating processing
+    Value: !GetAtt InitiateProcessingFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-InitiateFunction'
+  
+  ExtractFunctionArn:
+    Description: Lambda function for extracting insights
+    Value: !GetAtt ExtractInsightsFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ExtractFunction'
