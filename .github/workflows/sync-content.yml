@@ -5,6 +5,7 @@ on:
     paths:
       - 'demos/**/README.md'
       - 'experiments/**/README.md'
+      - 'snippets/**/README.md'
       - 'snippets/**/*.md'
       - 'snippets/**/*.py'
   workflow_dispatch:
@@ -147,8 +148,9 @@ jobs:
           
           # Sync snippets
           if Path("snippets").exists():
+              # First check for files directly in snippets folder
               for snippet_file in Path("snippets").iterdir():
-                  if snippet_file.suffix in ['.py', '.md']:
+                  if snippet_file.is_file() and snippet_file.suffix in ['.py', '.md']:
                       content = snippet_file.read_text()
                       
                       if snippet_file.suffix == '.py':
@@ -196,6 +198,87 @@ jobs:
                       output_path = Path("_snippets") / f"{snippet_file.stem}.md"
                       output_path.write_text(jekyll_content)
                       print(f"Synced snippet: {snippet_file.name}")
+              
+              # Now check for README files in subdirectories (like demos and experiments)
+              for snippet_dir in Path("snippets").iterdir():
+                  if snippet_dir.is_dir():
+                      # Look for README.md in subdirectory
+                      readme_path = snippet_dir / "README.md"
+                      if readme_path.exists():
+                          content = readme_path.read_text()
+                          
+                          # Extract title from first # heading
+                          title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
+                          title = title_match.group(1) if title_match else snippet_dir.name
+                          
+                          # Get description (first paragraph after title)
+                          desc_match = re.search(r'^# .+\n\n(.+)$', content, re.MULTILINE)
+                          description = desc_match.group(1) if desc_match else "Code snippet"
+                          
+                          jekyll_content = f"""---
+          title: "{title}"
+          date: {datetime.now().strftime('%Y-%m-%d')}
+          layout: snippet
+          description: "{description}"
+          source_folder: "snippets/{snippet_dir.name}"
+          ---
+          
+          {content}
+          
+          <div class='source-links'>
+            <h3>View Source</h3>
+            <a href='https://github.com/aws-samples/sample-ai-possibilities/tree/main/snippets/{snippet_dir.name}' class='btn btn-primary'>
+              View on GitHub
+            </a>
+          </div>
+          """
+                          
+                          # Clean up indentation
+                          jekyll_content = jekyll_content.replace("\n          ", "\n")
+                          
+                          output_path = Path("_snippets") / f"{snippet_dir.name}.md"
+                          output_path.write_text(jekyll_content)
+                          print(f"Synced snippet: {snippet_dir.name}")
+                      
+                      # Also look for individual .py files in subdirectories
+                      for py_file in snippet_dir.glob("*.py"):
+                          if py_file.name != "__init__.py":  # Skip __init__.py files
+                              content = py_file.read_text()
+                              
+                              # Extract docstring
+                              docstring_match = re.search(r'"""(.+?)"""', content, re.DOTALL)
+                              description = docstring_match.group(1).strip() if docstring_match else "Code snippet"
+                              
+                              jekyll_content = f"""---
+          title: "{py_file.stem.replace('-', ' ').replace('_', ' ').title()}"
+          date: {datetime.now().strftime('%Y-%m-%d')}
+          layout: snippet
+          language: python
+          description: "{description}"
+          source_file: "snippets/{snippet_dir.name}/{py_file.name}"
+          ---
+          
+          # {py_file.stem.replace('-', ' ').replace('_', ' ').title()}
+          
+          {description}
+          
+          ```python
+          {content}
+          ```
+          
+          <div class='source-links'>
+            <a href='https://github.com/aws-samples/sample-ai-possibilities/blob/main/snippets/{snippet_dir.name}/{py_file.name}' class='btn btn-primary'>
+              View Raw File
+            </a>
+          </div>
+          """
+                              
+                              # Clean up indentation
+                              jekyll_content = jekyll_content.replace("\n          ", "\n")
+                              
+                              output_path = Path("_snippets") / f"{snippet_dir.name}-{py_file.stem}.md"
+                              output_path.write_text(jekyll_content)
+                              print(f"Synced snippet: {snippet_dir.name}/{py_file.name}")
           
           print("\nContent sync complete!")
           SCRIPT_END
