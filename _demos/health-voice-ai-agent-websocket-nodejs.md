@@ -1,6 +1,6 @@
 ---
 title: "Health Guide Assistant: Amazon Nova Sonic with Amazon Bedrock Knowledge Bases"
-date: 2025-07-13
+date: 2025-07-18
 description: "Health Guide AI Voice Agent using Amazon Nova Sonic with Amazon Bedrock Knowledge Bases."
 layout: demo
 difficulty: medium

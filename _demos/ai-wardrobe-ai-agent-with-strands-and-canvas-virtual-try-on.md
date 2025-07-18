@@ -1,6 +1,6 @@
 ---
 title: "AI Unicorn Wardrobe: AI Agent with Strands SDK and Amazon Nova Canvas Virtual Try On"
-date: 2025-07-13
+date: 2025-07-18
 description: "A sophisticated AI-powered virtual wardrobe and fashion assistant that combines cutting-edge Amazon Bedrock AI capabilities with an intuitive React interface. Users can build a digital wardrobe, receive personalized outfit recommendations, and visualize complete looks using advanced Amazon Nova Canvas virtual try-on technology."
 layout: demo
 difficulty: advanced
