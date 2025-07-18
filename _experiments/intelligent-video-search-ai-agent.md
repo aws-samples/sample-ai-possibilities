@@ -1,8 +1,32 @@
 ---
 title: "Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via TwelveLabs API"
 date: 2025-07-18
+description: "## Summary"
 layout: experiment
+difficulty: medium
 source_folder: "experiments/intelligent-video-search-ai-agent"
+
+tags:
+  - ai-agents
+  - video-to-video-search
+  - bedrock
+  - python
+  - demo
+  - strands
+  - mcp
+technologies:
+  - Python 3.11+
+  - AWS SDK (boto3)
+  - Amazon Bedrock
+  - Amazon Nova
+  - Amazon OpenSearch Serverless
+  - AWS Step Functions
+  - Strands Agents SDK
+  - Model Context Protocol (MCP)
+  - FastAPI
+  - React
+  - Tailwind CSS
+  - TwelveLabs
 ---
 
 # Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via TwelveLabs API
