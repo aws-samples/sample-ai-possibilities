@@ -1,11 +1,7 @@
 ---
 title: "Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via Amazon Bedrock"
 date: 2025-07-19
-description: "Transform any video collection into an intelligent, searchable library using multi-modal AI and agentic conversation. This solution leverages **Amazon Bedrock's serverless native TwelveLabs models**, Strands SDK (Agentic framework), Amazon Nova, Cohere embedding, Anthropic Claude, and Amazon Transcribe to retrieve rich insights from videos - all without requiring external API keys or third-party SDKs. This is a generic video search solution which works with any type of videos.
-
-**🎯 Key Innovation**: This implementation uses TwelveLabs' cutting-edge video understanding models (Marengo and Pegasus) directly through Amazon Bedrock, providing enterprise-grade video AI capabilities with simplified deployment and billing through your AWS account.
-
-<img src="./images/UI.jpg" alt="Webserver UI" width="800" />"
+description: "Transform any video collection into an intelligent, searchable library using multi-modal AI and agentic conversation. This solution leverages Amazon Bedrock's serverless native TwelveLabs models, Strands SDK, Amazon Nova, Cohere embedding, Anthropic Claude, and Amazon Transcribe to retrieve rich insights from videos."
 layout: experiment
 difficulty: medium
 source_folder: "experiments/intelligent-video-search-ai-agent-twelve-labs-via-bedrock"
