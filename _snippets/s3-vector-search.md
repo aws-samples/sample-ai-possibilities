@@ -1,7 +1,7 @@
 ---
 title: "Getting Started with Amazon S3 Vectors and Bedrock Embeddings"
-date: 2025-07-18
-description: "A Jupyter notebook demo that shows how to create a vector index using Amazon S3 Vectors and populate it with Cohere embeddings generated through Amazon Bedrock. It then performs similarity queries and explores metadata-based filtering."
+date: 2025-07-19
+description: "This library is licensed under the MIT-0 License. See the [LICENSE](../../LICENSE) file."
 layout: snippet
 difficulty: easy
 source_folder: "snippets/s3-vector-search"
