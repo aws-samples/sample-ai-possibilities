@@ -1,12 +1,12 @@
 ---
-title: "Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via TwelveLabs API"
+title: "Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via Amazon Bedrock"
 date: 2025-07-19
 description: "Transform any video collection into an intelligent, searchable library using multi-modal AI and agentic conversation. This solution leverages Strands SDK (Agentic framework), Amazon Nova, Anthropic Claude, Twelve Labs models and Amazon Transcribe to retrieve rich insights from videos. This is a generic video search solution which works with any type of videos.
 
 <img src="./images/UI.jpg" alt="Webserver UI" width="800" />"
 layout: experiment
 difficulty: medium
-source_folder: "experiments/intelligent-video-search-ai-agent"
+source_folder: "experiments/intelligent-video-search-ai-agent-via-bedrock"
 
 tags:
   - ai-agents
@@ -31,7 +31,7 @@ technologies:
   - TwelveLabs
 ---
 
-# Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via TwelveLabs API
+# Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via Amazon Bedrock
 
 ## Overview
 
@@ -159,12 +159,29 @@ Video Keeper is an **agentic AI system** that automatically analyzes, indexes, a
 
 ### Prerequisites
 
-- **AWS Account** with permissions for Bedrock, OpenSearch Serverless, Lambda, Step Functions, S3
-- **AWS CLI** configured with appropriate credentials
+- **AWS Account** with permissions for Bedrock, S3 Vectors, Lambda, Step Functions, S3
+- **AWS CLI** configured with appropriate credentials  
 - **Python 3.11+** and **Node.js 16+** installed
 - **SAM CLI** installed ([installation guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html))
-- **Twelve Labs API key** ([subscribe and test TwelveLab models using their daily free quota](https://twelvelabs.io))
-- **S3 deployment bucket** - Create an S3 bucket for SAM deployment artifacts before running deploy.sh
+- **Amazon Bedrock model access** - Enable TwelveLabs models (Marengo and Pegasus) in your AWS account
+- **S3 buckets** - You need to create the following buckets before deployment:
+  - **Deployment bucket** (us-east-1): For SAM deployment artifacts
+  - **Pegasus bucket** (us-west-2): For TwelveLabs Pegasus model processing
+
+#### Creating Required S3 Buckets
+
+```bash
+# 1. Create deployment bucket in us-east-1
+aws s3 mb s3://my-deployment-bucket-$(date +%s) --region us-east-1
+
+# 2. Create Pegasus bucket in us-west-2 (REQUIRED for Pegasus model)
+aws s3api create-bucket \
+  --bucket my-pegasus-bucket-$(date +%s) \
+  --region us-west-2 \
+  --create-bucket-configuration LocationConstraint=us-west-2
+```
+
+Note: Save these bucket names, you'll need them for the deployment command.
 
 ### 1. Deploy AWS Infrastructure
 
@@ -178,15 +195,14 @@ aws s3 mb s3://my-sam-deployment-bucket-$(date +%s)
 
 # Deploy using the deployment script
 # IMPORTANT: 
-# -b: Deployment bucket (MUST already exist) - stores CloudFormation artifacts
-# -d: Data bucket name (will be CREATED) - stores your videos
-# -a: Your Twelve Labs API key - SAM will store your key on AWS Secrets-Manager (encrypted)
-# -p: Your IAM user/role ARN - grants OpenSearch access for local development
-# --create-index: Create Opensearch index using data_ingestion/1-create-opensearch-index.py script.
-./deploy.sh -b existing-deployment-bucket -d new-video-data-bucket -a your-twelve-labs-api-key -p your-iam-arn --create-index
+# -b: Video bucket name (will be CREATED by CloudFormation) - stores your videos
+# -d: Deployment bucket (MUST already exist) - stores CloudFormation artifacts  
+# -p: Pegasus bucket (MUST already exist in us-west-2) - for TwelveLabs Pegasus model
+# --create-vectors: Create S3 Vectors bucket and indexes after deployment
+./deploy.sh -b my-video-bucket -d my-deployment-bucket -p my-pegasus-bucket --create-vectors
 
 # Example:
-# ./deploy.sh -b my-sam-deployment-bucket-1736281200 -d my-unique-video-bucket-name -a tlk_XXXXXXXXXXXXXX -p "$(aws sts get-caller-identity --query Arn --output text)" --create-index
+# ./deploy.sh -b video-bucket-123456 -d deployment-bucket-123456 -p pegasus-bucket-123456 --create-vectors
 
 # Note outputs: OpenSearch endpoint, S3 bucket names
 ```
@@ -455,20 +471,58 @@ This project is designed for **educational and demonstration purposes**. In orde
 ## 🧹 Cleanup & Cost Management
 
 ### Complete Resource Cleanup
+## 🧹 Cleanup
+
+To avoid ongoing AWS charges, clean up all resources when done:
+
+### 1. Delete CloudFormation Stack
 ```bash
-# Empty and delete S3 buckets if required (you may need to do this before deleting the stack)
-aws s3 rm s3://your-video-bucket --recursive
-aws s3 rb s3://your-video-bucket
-
-# Delete CloudFormation stack (removes most resources)
-aws cloudformation delete-stack --stack-name YOUR_STACK_NAME
-
-# (Optional) Delete OpenSearch collection manually if required
-aws opensearchserverless delete-collection --id YOUR_COLLECTION_NAME
-
-# (Optional) Delete secrets
-aws secretsmanager delete-secret --secret-id twelve-labs-api-key --force-delete-without-recovery
+# Empty and delete the video bucket (created by CloudFormation)
+aws s3 rm s3://YOUR-VIDEO-BUCKET --recursive
+aws cloudformation delete-stack --stack-name video-ingestion-pipeline --region us-east-1
+# You may need to manually delete the video bucket
+aws s3 rb s3://YOUR-VIDEO-BUCKET
 ```
+
+### 2. Empty and Delete S3 Buckets
+```bash
+# Empty and delete the deployment bucket
+aws s3 rm s3://YOUR-DEPLOYMENT-BUCKET --recursive  
+aws s3 rb s3://YOUR-DEPLOYMENT-BUCKET
+
+# Empty and delete the Pegasus bucket (in us-west-2)
+aws s3 rm s3://YOUR-PEGASUS-BUCKET --recursive --region us-west-2
+aws s3 rb s3://YOUR-PEGASUS-BUCKET --region us-west-2
+```
+
+### 3. Delete S3 Vectors Resources
+```bash
+# Delete S3 Vectors indexes
+aws s3vectors delete-index \
+  --vector-bucket-name video-embeddings-vectors \
+  --index-name video-marengo-embeddings \
+  --region us-east-1
+
+aws s3vectors delete-index \
+  --vector-bucket-name video-embeddings-vectors \
+  --index-name video-cohere-embeddings \
+  --region us-east-1
+
+# Delete S3 Vectors bucket
+aws s3vectors delete-vector-bucket \
+  --vector-bucket-name video-embeddings-vectors \
+  --region us-east-1
+```
+
+### 4. Delete Secrets Manager Secret (if created)
+```bash
+aws secretsmanager delete-secret \
+  --secret-id twelve-labs-api-key \
+  --force-delete-without-recovery \
+  --region us-east-1
+```
+
+**Note:** You can also use the AWS Console to delete these resources if you prefer a visual interface. Make sure to check all regions (us-east-1 and us-west-2) for resources.
 
 ### Cost Monitoring
 - Monitor your [AWS Billing Dashboard](https://console.aws.amazon.com/billing/)
@@ -504,7 +558,7 @@ This library is licensed under the MIT-0 License. See the [LICENSE](../../LICENS
 
 <div class='source-links'>
   <h3>View Source</h3>
-  <a href='https://github.com/aws-samples/sample-ai-possibilities/tree/main/experiments/intelligent-video-search-ai-agent' class='btn btn-primary'>
+  <a href='https://github.com/aws-samples/sample-ai-possibilities/tree/main/experiments/intelligent-video-search-ai-agent-via-bedrock' class='btn btn-primary'>
     View on GitHub
   </a>
 </div>
