@@ -1,13 +1,40 @@
 ---
 title: "Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via TwelveLabs API"
-date: 2025-07-18
+date: 2025-07-19
+description: "Transform any video collection into an intelligent, searchable library using multi-modal AI and agentic conversation. This solution leverages Strands SDK (Agentic framework), Amazon Nova, Anthropic Claude, Twelve Labs models and Amazon Transcribe to retrieve rich insights from videos. This is a generic video search solution which works with any type of videos.
+
+<img src="./images/UI.jpg" alt="Webserver UI" width="800" />"
 layout: experiment
+difficulty: medium
 source_folder: "experiments/intelligent-video-search-ai-agent"
+
+tags:
+  - ai-agents
+  - video-to-video-search
+  - bedrock
+  - python
+  - demo
+  - strands
+  - mcp
+technologies:
+  - Python 3.11+
+  - AWS SDK (boto3)
+  - Amazon Bedrock
+  - Amazon Nova
+  - Amazon OpenSearch Serverless
+  - AWS Step Functions
+  - Strands Agents SDK
+  - Model Context Protocol (MCP)
+  - FastAPI
+  - React
+  - Tailwind CSS
+  - TwelveLabs
 ---
 
 # Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via TwelveLabs API
 
-## Summary
+## Overview
+
 Transform any video collection into an intelligent, searchable library using multi-modal AI and agentic conversation. This solution leverages Strands SDK (Agentic framework), Amazon Nova, Anthropic Claude, Twelve Labs models and Amazon Transcribe to retrieve rich insights from videos. This is a generic video search solution which works with any type of videos.
 
 <img src="./images/UI.jpg" alt="Webserver UI" width="800" />

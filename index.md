@@ -26,15 +26,29 @@ permalink: /
   </div>
 </section>
 
-### Recent Experiments
-{% for experiment in site.experiments limit:3 %}
-- [{{ experiment.title }}]({{ experiment.url | relative_url }}) - {{ experiment.description }}
-{% endfor %}
+<section class="section-block">
+  <h2>Recent Experiments</h2>
+  <div class="content-grid">
+    {% for experiment in site.experiments limit:3 %}
+      <div class="content-card">
+        <h3><a href="{{ experiment.url | relative_url }}">{{ experiment.title }}</a></h3>
+        <p>{{ experiment.description }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</section>
 
-### Recent Snippets
-{% for snippet in site.snippets limit:3 %}
-- [{{ snippet.title }}]({{ snippet.url | relative_url }}) - {{ snippet.description }}
-{% endfor %}
+<section class="section-block">
+  <h2>Recent Snippets</h2>
+  <div class="content-grid">
+    {% for snippet in site.snippets limit:3 %}
+      <div class="content-card">
+        <h3><a href="{{ snippet.url | relative_url }}">{{ snippet.title }}</a></h3>
+        <p>{{ snippet.description }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</section>
 ---
 [View All Demos]({{ '/demos/' | relative_url }}){: .btn .btn-primary }
 [View All Experiments]({{ '/experiments/' | relative_url }}){: .btn .btn-secondary }

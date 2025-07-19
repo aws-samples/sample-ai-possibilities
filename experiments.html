@@ -25,8 +25,21 @@ permalink: /experiments/
         </div>
       {% endif %}
       
+      {% if experiment.technologies %}
+        <div class="tech-stack">
+          <strong>Tech:</strong>
+          {% for tech in experiment.technologies %}
+            <code>{{ tech }}</code>
+          {% endfor %}
+        </div>
+      {% endif %}
+      
       <div class="meta">
-        <span class="date">{{ experiment.date | date: "%B %d, %Y" }}</span>
+        {% if experiment.difficulty %}
+          <span class="difficulty difficulty-{{ experiment.difficulty | downcase }}">
+            {{ experiment.difficulty }}
+          </span>
+        {% endif %}
       </div>
     </div>
   {% endfor %}
