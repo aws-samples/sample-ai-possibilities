@@ -1,0 +1,94 @@
+{
+  "Comment": "Video Ingestion Pipeline with TwelveLabs models via Amazon Bedrock and OpenSearch",
+  "StartAt": "InitiateVideoProcessing",
+  "States": {
+    "InitiateVideoProcessing": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${InitiateProcessingFunction}",
+        "Payload.$": "$"
+      },
+      "ResultPath": "$.processing",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0,
+          "MaxDelaySeconds": 60
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "HandleProcessingError",
+          "ResultPath": "$.error"
+        }
+      ],
+      "Next": "ExtractInsightsWithBedrock"
+    },
+    
+    "ExtractInsightsWithBedrock": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${ExtractInsightsFunction}",
+        "Payload.$": "$.processing.Payload.body"
+      },
+      "ResultPath": "$.insights",
+      "TimeoutSeconds": 2100,
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "NotifyCompletion"
+    },
+    
+    "NotifyCompletion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${CompletionTopic}",
+        "Message": {
+          "video_id.$": "$.insights.Payload.body.video_id",
+          "status": "completed",
+          "s3_bucket.$": "$.processing.Payload.body.s3_bucket",
+          "s3_key.$": "$.processing.Payload.body.s3_key",
+          "indexed": true,
+          "bedrock_models": "TwelveLabs Pegasus+Marengo via Bedrock",
+          "marengo_model_id.$": "$.processing.Payload.body.marengo_model_id",
+          "pegasus_model_id.$": "$.processing.Payload.body.pegasus_model_id",
+          "video_bucket_west.$": "$.processing.Payload.body.video_bucket_west",
+          "timestamp.$": "$$.State.EnteredTime"
+        }
+      },
+      "End": true
+    },
+    
+    "HandleProcessingError": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${ErrorTopic}",
+        "Message": {
+          "error.$": "$.error",
+          "execution.$": "$$.Execution.Name",
+          "timestamp.$": "$$.State.EnteredTime",
+          "status": "failed"
+        }
+      },
+      "Next": "FailState"
+    },
+    
+    "FailState": {
+      "Type": "Fail",
+      "Error": "VideoProcessingFailed",
+      "Cause": "Video processing pipeline encountered an error"
+    }
+  }
+}
