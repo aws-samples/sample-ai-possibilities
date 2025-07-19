@@ -2,7 +2,7 @@
 .ipynb_checkpoints
 
 # Ignore python venv folder
-.venv
+.venv*
 
 # Node modules (root and all subfolders)
 **/node_modules/
