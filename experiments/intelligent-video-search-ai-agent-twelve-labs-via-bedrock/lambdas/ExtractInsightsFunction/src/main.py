@@ -323,9 +323,9 @@ class TranscribeClient:
                     })
             
             # Add speaker labels if available
-            if 'speaker_labels' in transcript_data['results']:
-                speaker_segments = transcript_data['results']['speaker_labels']['segments']
-                for segment in speaker_segments:
+            speaker_labels = transcript_data.get('results', {}).get('speaker_labels', {})
+            if speaker_labels and speaker_labels.get('segments'):
+                for segment in speaker_labels['segments']:
                     formatted_transcription['speaker_labels'].append({
                         'speaker': segment['speaker_label'],
                         'start_time': float(segment['start_time']),
