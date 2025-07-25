@@ -388,17 +388,14 @@ class VideoInsightsClient:
             raise
     
     
-    def generate_comprehensive_insights(self, video_id: str, video_url: str, video_bucket_west: str = None, video_key_west: str = None) -> Dict[str, Any]:
+    def generate_comprehensive_insights(self, video_id: str, video_url: str, video_bucket_west: str, video_key_west: str) -> Dict[str, Any]:
         """Generate comprehensive insights using Bedrock Pegasus model"""
         insights = {}
         
         try:
-            # Get video content for Pegasus analysis
-            video_base64 = self._get_video_base64(video_bucket_west, video_key_west)
-            
             # Generate summary using Bedrock Pegasus
             summary_prompt = "Provide a comprehensive content analysis including entity visibility, emotional impact, key messages, and content themes. Give a detailed summary that captures the essence of the video content."
-            summary_result = self._invoke_pegasus_model(summary_prompt, video_base64)
+            summary_result = self._invoke_pegasus_model(summary_prompt, video_bucket_west, video_key_west)
             insights['summary'] = summary_result
             
             # Generate chapters using Bedrock Pegasus
@@ -409,7 +406,7 @@ class VideoInsightsClient:
             - Brief summary of what happens in this segment
             
             Return as a JSON array with format: [{"start": 0, "end": 30, "title": "Introduction", "summary": "..."}]"""
-            chapters_result = self._invoke_pegasus_model(chapters_prompt, video_base64)
+            chapters_result = self._invoke_pegasus_model(chapters_prompt, video_bucket_west, video_key_west)
             insights['chapters'] = self._parse_chapters_response(chapters_result)
             
             # Generate highlights using Bedrock Pegasus
@@ -420,17 +417,17 @@ class VideoInsightsClient:
             
             Focus on key reveals, emotional peaks, important information, or memorable moments.
             Return as JSON array with format: [{"start": 10, "end": 20, "highlight": "Key moment description"}]"""
-            highlights_result = self._invoke_pegasus_model(highlights_prompt, video_base64)
+            highlights_result = self._invoke_pegasus_model(highlights_prompt, video_bucket_west, video_key_west)
             insights['highlights'] = self._parse_highlights_response(highlights_result)
             
             # Generate topics using Bedrock Pegasus
             topics_prompt = "List the main topics, themes, and key concepts discussed in this video. Include both primary and secondary topics."
-            topics_result = self._invoke_pegasus_model(topics_prompt, video_base64)
+            topics_result = self._invoke_pegasus_model(topics_prompt, video_bucket_west, video_key_west)
             insights['topics'] = topics_result
             
             # Generate hashtags using Bedrock Pegasus
             hashtags_prompt = "Generate relevant hashtags for social media based on this video content. Include hashtags for topics, themes, industry, and general engagement. Return as a comma-separated list."
-            hashtags_result = self._invoke_pegasus_model(hashtags_prompt, video_base64)
+            hashtags_result = self._invoke_pegasus_model(hashtags_prompt, video_bucket_west, video_key_west)
             insights['hashtags'] = hashtags_result
             
             # Generate sentiment analysis
@@ -439,7 +436,7 @@ class VideoInsightsClient:
             - Emotional tone descriptors
             - Percentage breakdown if applicable
             - Key emotional moments"""
-            sentiment_result = self._invoke_pegasus_model(sentiment_prompt, video_base64)
+            sentiment_result = self._invoke_pegasus_model(sentiment_prompt, video_bucket_west, video_key_west)
             insights['sentiment_analysis'] = sentiment_result
             
             # Extract content analytics
@@ -448,7 +445,7 @@ class VideoInsightsClient:
             - Topic coverage and duration
             - Engagement indicators (if visible)
             - Content structure analysis"""
-            analytics_result = self._invoke_pegasus_model(analytics_prompt, video_base64)
+            analytics_result = self._invoke_pegasus_model(analytics_prompt, video_bucket_west, video_key_west)
             insights['content_analytics'] = analytics_result
             
         except Exception as e:
@@ -542,13 +539,23 @@ class VideoInsightsClient:
             self.logger.error(f"Failed to get video base64: {e}")
             raise
     
-    def _invoke_pegasus_model(self, prompt: str, video_base64: str) -> str:
+    def _invoke_pegasus_model(self, prompt: str, video_west_bucket: str, video_west_key: str) -> str:
         """Invoke Pegasus model in us-west-2 for video understanding"""
         try:
+
+            # Get AWS account ID for bucket owner
+            sts_client = boto3.client('sts', region_name=self.primary_region)
+            account_id = sts_client.get_caller_identity()['Account']
+
+            video_s3_uri = f"s3://{video_west_bucket}/{video_west_key}"
+            
             request_body = {
                 "inputPrompt": prompt,
                 "mediaSource": {
-                    "base64String": video_base64
+                    "s3Location": {
+                        "uri": video_s3_uri,
+                        "bucketOwner": account_id
+                    }
                 }
             }
             
