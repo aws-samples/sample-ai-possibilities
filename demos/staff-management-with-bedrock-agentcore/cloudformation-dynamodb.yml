@@ -1,0 +1,465 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB tables for StaffCast - Staff scheduling system'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (dev, staging, prod)
+  
+  ProjectName:
+    Type: String
+    Default: staffcast
+    Description: Name of the project
+  
+  BillingMode:
+    Type: String
+    Default: PAY_PER_REQUEST
+    AllowedValues: [PAY_PER_REQUEST, PROVISIONED]
+    Description: DynamoDB billing mode
+  
+  AWSRegion:
+    Type: String
+    Default: us-east-1
+    AllowedValues: 
+      - us-east-1
+      - us-east-2
+      - us-west-1
+      - us-west-2
+      - eu-west-1
+      - eu-west-2
+      - eu-central-1
+      - ap-southeast-1
+      - ap-southeast-2
+      - ap-northeast-1
+    Description: AWS region for deployment
+
+Conditions:
+  IsProvisioned: !Equals [!Ref BillingMode, PROVISIONED]
+
+Resources:
+  # Staff table - stores staff member information
+  StaffTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-staff'
+      BillingMode: !Ref BillingMode
+      AttributeDefinitions:
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: staff_id
+          AttributeType: S
+        - AttributeName: position
+          AttributeType: S
+        - AttributeName: is_active
+          AttributeType: S
+      KeySchema:
+        - AttributeName: business_id
+          KeyType: HASH
+        - AttributeName: staff_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: PositionIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: position
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+            - !Ref AWS::NoValue
+        - IndexName: ActiveStaffIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+            - !Ref AWS::NoValue
+      ProvisionedThroughput: !If
+        - IsProvisioned
+        - ReadCapacityUnits: 10
+          WriteCapacityUnits: 10
+        - !Ref AWS::NoValue
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: Staff management
+
+  # Roster table - stores work schedules
+  RosterTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-rosters'
+      BillingMode: !Ref BillingMode
+      AttributeDefinitions:
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: roster_date
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: business_id
+          KeyType: HASH
+        - AttributeName: roster_date
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: status
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+            - !Ref AWS::NoValue
+      ProvisionedThroughput: !If
+        - IsProvisioned
+        - ReadCapacityUnits: 10
+          WriteCapacityUnits: 10
+        - !Ref AWS::NoValue
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: Roster scheduling
+
+  # Availability table - stores staff availability
+  AvailabilityTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-availability'
+      BillingMode: !Ref BillingMode
+      AttributeDefinitions:
+        - AttributeName: staff_id
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: S
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: available
+          AttributeType: S
+      KeySchema:
+        - AttributeName: staff_id
+          KeyType: HASH
+        - AttributeName: date
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: BusinessDateIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 10
+              WriteCapacityUnits: 10
+            - !Ref AWS::NoValue
+        - IndexName: AvailabilityIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: available
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+            - !Ref AWS::NoValue
+      ProvisionedThroughput: !If
+        - IsProvisioned
+        - ReadCapacityUnits: 15
+          WriteCapacityUnits: 15
+        - !Ref AWS::NoValue
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: Availability tracking
+
+  # Business table - stores business configuration
+  BusinessTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-businesses'
+      BillingMode: !Ref BillingMode
+      AttributeDefinitions:
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: business_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: BusinessTypeIndex
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+            - AttributeName: business_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 2
+              WriteCapacityUnits: 2
+            - !Ref AWS::NoValue
+      ProvisionedThroughput: !If
+        - IsProvisioned
+        - ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        - !Ref AWS::NoValue
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: Business configuration
+
+  # Holidays table - stores staff holiday requests
+  HolidaysTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-holidays'
+      BillingMode: !Ref BillingMode
+      AttributeDefinitions:
+        - AttributeName: staff_id
+          AttributeType: S
+        - AttributeName: holiday_id
+          AttributeType: S
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: start_date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: staff_id
+          KeyType: HASH
+        - AttributeName: holiday_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: BusinessStatusIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: status
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+            - !Ref AWS::NoValue
+        - IndexName: BusinessDateIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: start_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+            - !Ref AWS::NoValue
+      ProvisionedThroughput: !If
+        - IsProvisioned
+        - ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        - !Ref AWS::NoValue
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: Holiday management
+
+  # IAM Role for MCP Server
+  StaffCastMCPRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-mcp-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - bedrock-agentcore.amazonaws.com
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt StaffTable.Arn
+                  - !Sub '${StaffTable.Arn}/index/*'
+                  - !GetAtt RosterTable.Arn
+                  - !Sub '${RosterTable.Arn}/index/*'
+                  - !GetAtt AvailabilityTable.Arn
+                  - !Sub '${AvailabilityTable.Arn}/index/*'
+                  - !GetAtt BusinessTable.Arn
+                  - !Sub '${BusinessTable.Arn}/index/*'
+                  - !GetAtt HolidaysTable.Arn
+                  - !Sub '${HolidaysTable.Arn}/index/*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:ListTables
+                  - dynamodb:DescribeTable
+                Resource: '*'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # IAM Role for API Server
+  StaffCastAPIRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-api-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - bedrock-agentcore.amazonaws.com
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: BedrockAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: '*'
+        - PolicyName: MCPAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: !GetAtt StaffCastMCPRole.Arn
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  StaffTableName:
+    Description: 'Name of the Staff DynamoDB table'
+    Value: !Ref StaffTable
+    Export:
+      Name: !Sub '${AWS::StackName}-StaffTableName'
+  
+  RosterTableName:
+    Description: 'Name of the Roster DynamoDB table'
+    Value: !Ref RosterTable
+    Export:
+      Name: !Sub '${AWS::StackName}-RosterTableName'
+  
+  AvailabilityTableName:
+    Description: 'Name of the Availability DynamoDB table'
+    Value: !Ref AvailabilityTable
+    Export:
+      Name: !Sub '${AWS::StackName}-AvailabilityTableName'
+  
+  BusinessTableName:
+    Description: 'Name of the Business DynamoDB table'
+    Value: !Ref BusinessTable
+    Export:
+      Name: !Sub '${AWS::StackName}-BusinessTableName'
+  
+  HolidaysTableName:
+    Description: 'Name of the Holidays DynamoDB table'
+    Value: !Ref HolidaysTable
+    Export:
+      Name: !Sub '${AWS::StackName}-HolidaysTableName'
+
+  MCPRoleArn:
+    Description: 'ARN of the MCP server IAM role'
+    Value: !GetAtt StaffCastMCPRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MCPRoleArn'
+
+  APIRoleArn:
+    Description: 'ARN of the API server IAM role'
+    Value: !GetAtt StaffCastAPIRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-APIRoleArn'
+
+  TableNames:
+    Description: 'Environment variables for table names'
+    Value: !Sub |
+      STAFF_TABLE_NAME=${StaffTable}
+      ROSTER_TABLE_NAME=${RosterTable}
+      AVAILABILITY_TABLE_NAME=${AvailabilityTable}
+      BUSINESS_TABLE_NAME=${BusinessTable}
+      HOLIDAYS_TABLE_NAME=${HolidaysTable}
+    Export:
+      Name: !Sub '${AWS::StackName}-TableNames'

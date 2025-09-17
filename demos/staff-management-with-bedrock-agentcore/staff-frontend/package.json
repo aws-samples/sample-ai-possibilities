@@ -1,0 +1,66 @@
+{
+  "name": "staffcast-staff-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-bedrock-agentcore": "^3.886.0",
+    "@aws-sdk/client-cognito-identity": "^3.886.0",
+    "@aws-sdk/credential-providers": "^3.886.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/system": "^7.3.1",
+    "@mui/x-date-pickers": "^8.10.2",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.514.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "PORT=3001 REACT_APP_API_URL=http://localhost:8081 react-scripts start",
+    "start:dev": "PORT=3001 REACT_APP_API_URL=http://localhost:8081 react-scripts start",
+    "start:staging": "PORT=3001 REACT_APP_API_URL=http://staging.staffcast.com:8081 react-scripts start",
+    "start:prod": "PORT=3001 REACT_APP_API_URL=https://staff-api.staffcast.com react-scripts start",
+    "start:custom": "react-scripts start",
+    "build": "react-scripts build",
+    "build:staging": "REACT_APP_API_URL=http://staging.recipegenie.com:8080 react-scripts build",
+    "build:prod": "REACT_APP_API_URL=https://api.recipegenie.com react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "serve:build": "npx serve -s build -l 3000"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
+    "@tailwindcss/typography": "^0.5.10",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.31",
+    "serve": "^14.2.0",
+    "tailwindcss": "^3.3.0"
+  },
+  "proxy": "http://localhost:8081"
+}

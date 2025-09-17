@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'StaffCast - OpenSearch Serverless Collection for Knowledge Base'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+  
+  ProjectName:
+    Type: String
+    Default: staffcast
+    Description: Project name for resource naming
+  
+  AWSRegion:
+    Type: String
+    Default: us-east-1
+    Description: AWS region for deployment
+  
+  UserArn:
+    Type: String
+    Description: ARN of the current AWS user (from aws sts get-caller-identity) for OpenSearch access
+    AllowedPattern: "^arn:aws:iam::\\d{12}:user/[\\w+=,.@-]+|arn:aws:sts::\\d{12}:assumed-role/[\\w+=,.@-]+/[\\w+=,.@-]+$"
+    ConstraintDescription: Must be a valid IAM user ARN or assumed role ARN
+
+Resources:
+  # Security Policy for OpenSearch Serverless (Encryption)
+  PolicyCollectionSecurityPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-policies-security'
+      Type: encryption
+      Policy: !Sub |
+        {
+          "Rules": [
+            {
+              "ResourceType": "collection",
+              "Resource": ["collection/${ProjectName}-${Environment}-policies"]
+            }
+          ],
+          "AWSOwnedKey": true
+        }
+
+  # Network Policy for OpenSearch Serverless
+  PolicyNetworkPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-policies-network'
+      Type: network
+      Policy: !Sub |
+        [
+          {
+            "Rules": [
+              {
+                "ResourceType": "collection",
+                "Resource": ["collection/${ProjectName}-${Environment}-policies"]
+              },
+              {
+                "ResourceType": "dashboard",
+                "Resource": ["collection/${ProjectName}-${Environment}-policies"]
+              }
+            ],
+            "AllowFromPublic": true
+          }
+        ]
+
+  # IAM Role for Bedrock Knowledge Base (Full permissions for StaffCast project)
+  KnowledgeBaseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-kb-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Sub "${AWS::AccountId}"
+              ArnLike:
+                "AWS:SourceArn": !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*"
+      Policies:
+        - PolicyName: S3PolicyDocumentsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  # Pattern matches the bucket that will be created in staff-extensions
+                  - !Sub 'arn:aws:s3:::${ProjectName}-${Environment}-policies-${AWS::AccountId}'
+                  - !Sub 'arn:aws:s3:::${ProjectName}-${Environment}-policies-${AWS::AccountId}/*'
+        - PolicyName: OpenSearchServerlessAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - aoss:APIAccessAll
+                Resource: !Sub 'arn:aws:aoss:${AWS::Region}:${AWS::AccountId}:collection/*'
+        - PolicyName: BedrockModelAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:ListCustomModels
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource: !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/*'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # Basic IAM Role for index creation (used by Python script)
+  IndexCreationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-index-creation-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: OpenSearchAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - aoss:APIAccessAll
+                Resource: !Sub 'arn:aws:aoss:${AWS::Region}:${AWS::AccountId}:collection/*'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # OpenSearch Serverless Collection
+  PolicyVectorCollection:
+    Type: AWS::OpenSearchServerless::Collection
+    DependsOn: 
+      - PolicyCollectionSecurityPolicy
+      - PolicyNetworkPolicy
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-policies'
+      Type: VECTORSEARCH
+      Description: Vector search collection for StaffCast company policies
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # Data Access Policy for user and Knowledge Base access
+  PolicyDataAccessPolicy:
+    Type: AWS::OpenSearchServerless::AccessPolicy
+    DependsOn: 
+      - KnowledgeBaseRole
+      - PolicyVectorCollection
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-policies-access'
+      Type: data
+      Policy: !Sub |
+        [
+          {
+            "Description": "Access for current user and Knowledge Base",
+            "Rules": [
+              {
+                "ResourceType": "index",
+                "Resource": ["index/${ProjectName}-${Environment}-policies/*"],
+                "Permission": [
+                  "aoss:CreateIndex",
+                  "aoss:DescribeIndex",
+                  "aoss:ReadDocument",
+                  "aoss:WriteDocument",
+                  "aoss:UpdateIndex"
+                ]
+              },
+              {
+                "ResourceType": "collection", 
+                "Resource": ["collection/${ProjectName}-${Environment}-policies"],
+                "Permission": ["aoss:*"]
+              }
+            ],
+            "Principal": ["${UserArn}", "${KnowledgeBaseRole.Arn}"]
+          }
+        ]
+
+Outputs:
+  CollectionName:
+    Description: Name of the OpenSearch Serverless Collection
+    Value: !Ref PolicyVectorCollection
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-collection-name'
+  
+  CollectionArn:
+    Description: ARN of the OpenSearch Serverless Collection
+    Value: !GetAtt PolicyVectorCollection.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-collection-arn'
+  
+  CollectionEndpoint:
+    Description: Endpoint of the OpenSearch Serverless Collection
+    Value: !GetAtt PolicyVectorCollection.CollectionEndpoint
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-collection-endpoint'
+  
+  CollectionId:
+    Description: ID of the OpenSearch Serverless Collection
+    Value: !GetAtt PolicyVectorCollection.Id
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-collection-id'
+  
+  KnowledgeBaseRoleArn:
+    Description: ARN of the Knowledge Base IAM role
+    Value: !GetAtt KnowledgeBaseRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-kb-role-arn'

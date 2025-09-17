@@ -1,0 +1,363 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'StaffCast - Staff Portal Extensions (S3 + Knowledge Base + Additional Tables)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+  
+  ProjectName:
+    Type: String
+    Default: staffcast
+    Description: Project name for resource naming
+  
+  AWSRegion:
+    Type: String
+    Default: us-east-1
+    Description: AWS region for deployment
+
+Resources:
+  # Additional DynamoDB Tables for Staff Portal Extensions
+  
+  # Certifications Table - Track staff certifications and compliance
+  CertificationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-certifications'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: staff_id
+          AttributeType: S
+        - AttributeName: certification_id
+          AttributeType: S
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: expiry_date
+          AttributeType: S
+        - AttributeName: certification_type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: staff_id
+          KeyType: HASH
+        - AttributeName: certification_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: BusinessIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: expiry_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: TypeIndex
+          KeySchema:
+            - AttributeName: certification_type
+              KeyType: HASH
+            - AttributeName: expiry_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # Payroll Records Table - Store payment history and hours worked
+  PayrollTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-payroll'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: staff_id
+          AttributeType: S
+        - AttributeName: pay_period
+          AttributeType: S
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: payment_date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: staff_id
+          KeyType: HASH
+        - AttributeName: pay_period
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: BusinessPayrollIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: payment_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # Training Records Table - Track skill development and course completion
+  TrainingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-training'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: staff_id
+          AttributeType: S
+        - AttributeName: training_id
+          AttributeType: S
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: completion_date
+          AttributeType: S
+        - AttributeName: training_type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: staff_id
+          KeyType: HASH
+        - AttributeName: training_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: BusinessTrainingIndex
+          KeySchema:
+            - AttributeName: business_id
+              KeyType: HASH
+            - AttributeName: completion_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: TrainingTypeIndex
+          KeySchema:
+            - AttributeName: training_type
+              KeyType: HASH
+            - AttributeName: completion_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # S3 Bucket for Knowledge Base Documents (Private)
+  PolicyDocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-${Environment}-policies-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # Bedrock Knowledge Base (imports OpenSearch collection and KB role from other stack)
+  CompanyPoliciesKnowledgeBase:
+    Type: AWS::Bedrock::KnowledgeBase
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-policies-kb'
+      Description: 'StaffCast Company Policies and Procedures Knowledge Base'
+      RoleArn: 
+        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-kb-role-arn'
+      KnowledgeBaseConfiguration:
+        Type: VECTOR
+        VectorKnowledgeBaseConfiguration:
+          EmbeddingModelArn: !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/cohere.embed-multilingual-v3'
+      StorageConfiguration:
+        Type: OPENSEARCH_SERVERLESS
+        OpensearchServerlessConfiguration:
+          CollectionArn: 
+            Fn::ImportValue: !Sub '${ProjectName}-${Environment}-collection-arn'
+          VectorIndexName: 'staffcast-policies-index'
+          FieldMapping:
+            VectorField: vector
+            TextField: text
+            MetadataField: metadata
+      Tags:
+        Environment: !Ref Environment
+        Project: !Ref ProjectName
+
+  # Knowledge Base Data Source (S3)
+  PolicyDataSource:
+    Type: AWS::Bedrock::DataSource
+    Properties:
+      KnowledgeBaseId: !Ref CompanyPoliciesKnowledgeBase
+      Name: !Sub '${ProjectName}-policies-s3-source'
+      Description: 'S3 data source for company policy documents'
+      DataSourceConfiguration:
+        Type: S3
+        S3Configuration:
+          BucketArn: !GetAtt PolicyDocumentsBucket.Arn
+          InclusionPrefixes:
+            - 'policies/'
+
+  # IAM Role for Lambda API (Full DynamoDB Access)
+  LambdaApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-lambda-api-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  # New tables
+                  - !GetAtt CertificationsTable.Arn
+                  - !GetAtt PayrollTable.Arn
+                  - !GetAtt TrainingTable.Arn
+                  - !Sub '${CertificationsTable.Arn}/index/*'
+                  - !Sub '${PayrollTable.Arn}/index/*'
+                  - !Sub '${TrainingTable.Arn}/index/*'
+                  # Existing tables from core stack
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-*'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-*/index/*'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # IAM Role for Staff API (Restricted Access)
+  StaffApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-staff-api-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: RestrictedDynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Read access to all tables (application-level filtering)
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  # All core tables
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-*'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-*/index/*'
+                  # New extension tables
+                  - !GetAtt CertificationsTable.Arn
+                  - !GetAtt PayrollTable.Arn
+                  - !GetAtt TrainingTable.Arn
+                  - !Sub '${CertificationsTable.Arn}/index/*'
+                  - !Sub '${PayrollTable.Arn}/index/*'
+                  - !Sub '${TrainingTable.Arn}/index/*'
+              # Write access only for holiday requests and availability updates
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-holidays'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-availability'
+        - PolicyName: BedrockKnowledgeBaseAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                Resource: '*'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  CertificationsTableName:
+    Description: Name of the Certifications table
+    Value: !Ref CertificationsTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-certifications-table'
+  
+  PayrollTableName:
+    Description: Name of the Payroll table
+    Value: !Ref PayrollTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-payroll-table'
+  
+  TrainingTableName:
+    Description: Name of the Training table
+    Value: !Ref TrainingTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-training-table'
+  
+  PolicyBucketName:
+    Description: S3 bucket for policy documents
+    Value: !Ref PolicyDocumentsBucket
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-policy-bucket'
+  
+  StaffApiRoleArn:
+    Description: ARN of the Staff API IAM role
+    Value: !GetAtt StaffApiRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-staff-api-role'
+  
+  LambdaApiRoleArn:
+    Description: ARN of the Lambda API IAM role
+    Value: !GetAtt LambdaApiRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-lambda-api-role'
+  
+  KnowledgeBaseId:
+    Description: ID of the Bedrock Knowledge Base for company policies
+    Value: !Ref CompanyPoliciesKnowledgeBase
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-knowledge-base-id'
+  
+  KnowledgeBaseArn:
+    Description: ARN of the Bedrock Knowledge Base
+    Value: !GetAtt CompanyPoliciesKnowledgeBase.KnowledgeBaseArn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-knowledge-base-arn'

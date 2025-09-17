@@ -1,0 +1,14 @@
+boto3
+fastapi
+uvicorn[standard]
+websockets==11.0.3
+python-multipart
+python-dotenv==1.0.0
+strands-agents
+strands-agents-tools
+mcp
+requests
+bedrock-agentcore
+requests-aws4auth
+opensearch-py
+bedrock_agentcore_starter_toolkit
