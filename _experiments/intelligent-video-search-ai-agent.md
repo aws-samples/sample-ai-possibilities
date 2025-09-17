@@ -1,7 +1,9 @@
 ---
 title: "Video Keeper - AI-Powered Video Library with Multimodal Agentic Search via TwelveLabs API"
-date: 2025-07-19
-description: "Transform any video collection into an intelligent, searchable library using multi-modal AI and agentic conversation. This solution leverages Strands SDK, Amazon Nova, Anthropic Claude, Twelve Labs models and Amazon Transcribe to retrieve rich insights from videos."
+date: 2025-09-17
+description: "Transform any video collection into an intelligent, searchable library using multi-modal AI and agentic conversation. This solution leverages Strands SDK (Agentic framework), Amazon Nova, Anthropic Claude, Twelve Labs models and Amazon Transcribe to retrieve rich insights from videos. This is a generic video search solution which works with any type of videos.
+
+<img src="./images/UI.jpg" alt="Webserver UI" width="800" />"
 layout: experiment
 difficulty: medium
 source_folder: "experiments/intelligent-video-search-ai-agent"
