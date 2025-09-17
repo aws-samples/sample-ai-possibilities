@@ -22,17 +22,18 @@ tags:
   - fastapi
   - react
   - workforce-management
+
 technologies:
-  - **Backend**: Python 3.10+, Strands Agents SDK
-  - **Database**: Amazon DynamoDB (7 tables + GSIs)
-  - **AI**: Amazon Bedrock (Claude 3.5 Sonnet) + Knowledge Base
-  - **Vector Search**: Amazon OpenSearch Serverless
-  - **Agent hosting**: Amazon AgentCore
-  - **Storage**: Amazon S3 (Private, encrypted)
-  - **Infrastructure**: AWS CloudFormation (3 templates)
-  - **Observability**: Langfuse and Cloudwatch
-  - **Protocol**: AgentCore Gateway with Model Context Protocol (MCP)
-  - **Frontend**: React, Material UI, WebSockets, Split-screen Layout
+  - Backend**: Python 3.10+ and Strands Agents SDK
+  - Database: Amazon DynamoDB (7 tables + GSIs)
+  - AI: Amazon Bedrock (Claude 3.5 Sonnet) + Knowledge Base
+  - Vector Search: Amazon OpenSearch Serverless
+  - Agent hosting: Amazon AgentCore
+  - Storage: Amazon S3
+  - Infrastructure: AWS CloudFormation (3 templates)
+  - Observability: Langfuse and Cloudwatch
+  - Protocol: AgentCore Gateway with Model Context Protocol (MCP)
+  - Frontend: React, Material UI, WebSockets, Split-screen Layout
 ---
 
 # StaffCast - AI-Powered Dual-Portal Staff Management System
@@ -59,72 +60,15 @@ StaffCast transforms traditional workforce management by providing separate, opt
 
 This project demonstrates how to build modern dual-portal AI applications with role-based access control, integrating multiple data sources through MCP servers and AWS Bedrock Knowledge Bases.
 
-**Core Requirements**:
-- **Dual Web Servers**: Manager API + Staff API. Agents hosted on Amazon AgentCore
-- **Restricted AI Agent**: Staff portal with limited MCP tool access (personal data only)
-- **Knowledge Base Integration**: Amazon Bedrock Knowledge Base for company policy search via native Strands tools, check this link for an example https://strandsagents.com/latest/documentation/docs/examples/python/knowledge_base_agent/
-- **Enhanced Database**: Staff information with certifications, payroll, and training tables
-- **Professional Frontend**: Material UI split-screen interface (chat + data panel)
-- **Multi-tenant Ready**: Modular architecture supporting multiple companies
-- **Demo Setup**: Hardcoded staff member (Emma Davis at The Daily Grind Cafe) for initial testing
-
 **Key Innovation**: This system showcases how to create role-based AI agents where the same underlying MCP tools provide different levels of access and data filtering based on user context, combined with AI-powered policy search capabilities.
-
-## Tags
-
-- bedrock
-- python
-- staff-scheduling
-- strands
-- mcp
-- agents
-- dynamodb
-- fastapi
-- react
-- workforce-management
-
-## Technologies
-
-- **Backend**: Python 3.10+, Strands Agents SDK
-- **Database**: Amazon DynamoDB (7 tables + GSIs)
-- **AI**: Amazon Bedrock (Claude 3.5 Sonnet) + Knowledge Base
-- **Vector Search**: Amazon OpenSearch Serverless
-- **Agent hosting**: Amazon AgentCore
-- **Storage**: Amazon S3 (Private, encrypted)
-- **Infrastructure**: AWS CloudFormation (3 templates)
-- **Observability**: Langfuse and Cloudwatch
-- **Protocol**: AgentCore Gateway with Model Context Protocol (MCP)
-- **Frontend**: React, Material UI, WebSockets, Split-screen Layout
-
-## Features
-
-### Manager Portal Features
-- **Intelligent Roster Generation**: AI-powered scheduling considering multiple factors
-- **Staff Management**: Comprehensive staff profiles with skills, certifications, and preferences
-- **Holiday Management**: Approve/deny leave requests with workflow
-- **Availability Tracking**: View and manage all staff availability
-- **Payroll Management**: Track hours, wages, and payment history
-- **Certification Tracking**: Monitor compliance and renewal requirements
-- **Training Management**: Oversee staff development and course completion
-- **Real-time Updates**: WebSocket-based streaming responses
-- **Multi-business Support**: Secure multi-tenant architecture
-
-### Staff Portal Features
-- **Personal Schedule**: View upcoming shifts and roster assignments
-- **Availability Management**: Set and update personal availability
-- **Leave Requests**: Submit holiday and time-off requests
-- **Company Policy Search**: AI-powered search through company documentation via Bedrock Knowledge Base
-- **Personal Records**: View own payroll, certifications, and training history
-- **Real-time Chat**: WebSocket-based AI assistant for work-related questions
-- **Secure Access**: Role-based restrictions ensuring data privacy
 
 ## Frontend
 
 ### Split-Screen Layout Design
-- **Left Panel**: AI chat interface for natural language interaction
-- **Right Panel**: Dynamic data display that updates based on conversation context
-- **Responsive**: Professional Material UI components with clean, modern design
-- **Real-time**: WebSocket connection for streaming AI responses
+- Left Panel: AI chat interface for natural language interaction
+- Right Panel: Dynamic data display that updates based on conversation context
+- Responsive: Professional Material UI components with clean, modern design
+- Real-time: WebSocket connection for streaming AI responses
 
 ### Panel Types and Behavior
 1. **Roster Panel**: Triggered by schedule/roster discussions
@@ -180,7 +124,7 @@ This project demonstrates how to build modern dual-portal AI applications with r
          │ │Control      │ │& Validation  │ │  │
          │ └─────────────┘ └──────────────┘ │  │
          └──────────────────────────────────┘  │
-           │                         │
+                     │                         │
          ┌───────────┘           ┌─────────────┘
          │                       │
          ▼                       ▼
@@ -196,10 +140,10 @@ This project demonstrates how to build modern dual-portal AI applications with r
 │ • Payroll       │    │           │             │
 │ • Training      │    │           ▼             │
 └─────────────────┘    │ ┌─────────────────────┐ │
-             │ │OpenSearch Serverless│ │
-             │ │   Vector Index      │ │
-             │ └─────────────────────┘ │
-             └─────────────────────────┘
+                       │ │OpenSearch Serverless│ │
+                       │ │   Vector Index      │ │
+                       │ └─────────────────────┘ │
+                       └─────────────────────────┘
 ```
 
 ## AgentCore Deployment
