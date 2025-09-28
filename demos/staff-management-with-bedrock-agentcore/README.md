@@ -405,7 +405,6 @@ You can re-use this script for future agents, all you need to do is modify the p
 # The script will ask a few questions, you dont need to change the configuration, press ENTER confirming the default option
 agentcore configure -e staffcast_agentcore.py
 agentcore launch
-rm .bedrock_agentcore.yaml
 
 # Configure and deploy Staff Portal agent (AI Agent with restricted tool access + Knowledge Base)
 agentcore configure -e staffcast_staff_agentcore.py
@@ -422,6 +421,8 @@ agentcore invoke '{"prompt": "show me the roster for tomorrow"}'
 # Test Staff Portal (policy search + personal data)
 agentcore configure --agent staffcast_staff_agentcore
 agentcore invoke '{"prompt": "What is the sick leave policy?"}'
+## in case you need to deploy in a different account, you may want to first delete this local xml file:
+#rm .bedrock_agentcore.yaml
 ```
 
 **Step 16: Test AgentCore Run-time using AgentCore Console**
