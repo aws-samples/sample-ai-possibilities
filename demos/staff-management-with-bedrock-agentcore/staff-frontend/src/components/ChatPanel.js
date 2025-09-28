@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useReducer } from 'react';
+import { flushSync } from 'react-dom';
 import {
   Box,
   TextField,
@@ -26,14 +27,35 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
   const [sessionId] = useState(`session_${Date.now()}`);
   const [businessId] = useState('cafe-001');
   const messagesEndRef = useRef(null);
-  const [streamingMessage, setStreamingMessage] = useState('');
   const [currentTool, setCurrentTool] = useState('');
+  const [toolHistory, setToolHistory] = useState([]);
+  const [messageTools, setMessageTools] = useState({});
   const [awsConfigValid, setAwsConfigValid] = useState(false);
   const [connectionError, setConnectionError] = useState('');
+  
+  // Direct React state approach - use flushSync to bypass batching
+  const [streamingState, setStreamingState] = useState({
+    isStreaming: false,
+    message: '',
+    counter: 0
+  });
+  
+  // Use ref to track current state for callbacks to avoid stale closures
+  const streamingStateRef = useRef(streamingState);
+  streamingStateRef.current = streamingState;
+  
+  const updateStreamingState = (newState) => {
+    console.log('updateStreamingState: Setting state from:', streamingStateRef.current, 'to:', newState);
+    // Use React's flushSync to force immediate update
+    flushSync(() => {
+      setStreamingState(newState);
+      streamingStateRef.current = newState; // Keep ref in sync
+    });
+    console.log('updateStreamingState: State updated synchronously');
+  };
 
   // Staff-specific suggestions
   const [suggestions] = useState([
@@ -48,8 +70,6 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
   // AWS AgentCore configuration check
 
   // Use refs for values that change during streaming
-  const streamingMessageRef = useRef('');
-  const isStreamingRef = useRef(false);
   const panelUpdatedRef = useRef(false);
 
   const scrollToBottom = () => {
@@ -122,11 +142,14 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
     messages.forEach((msg, idx) => {
       console.log(`Message ${idx}:`, msg.role, msg.content.substring(0, 50) + '...');
     });
+    if (streamingState.message) {
+      console.log('Streaming message:', streamingState.message.substring(0, 50) + '...');
+    }
     scrollToBottom();
-  }, [messages, streamingMessage]);
+  }, [messages, streamingState]);
 
   const sendMessage = async () => {
-    if (!input.trim() || isLoading || !awsConfigValid) return;
+    if (!input.trim() || isLoading || streamingState.isStreaming || !awsConfigValid) return;
 
     const userMessage = {
       role: 'user',
@@ -137,9 +160,9 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-    setStreamingMessage('');
-    streamingMessageRef.current = '';
+    updateStreamingState({ isStreaming: false, message: '', counter: 0 });
     panelUpdatedRef.current = false;
+    const currentMessageTools = [];
 
     try {
       await invokeAgent({
@@ -150,47 +173,62 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
         enableStreaming: true,
         onStreamChunk: (chunk) => {
           // Handle streaming chunks
-          isStreamingRef.current = true;
-          setIsStreaming(true);
+          console.log('onStreamChunk: Received chunk:', chunk);
+          
           setIsLoading(false);
-          streamingMessageRef.current += chunk;
-          setStreamingMessage(streamingMessageRef.current);
+          // Use ref to get current state to avoid stale closure
+          const currentState = streamingStateRef.current;
+          const newMessage = currentState.message + chunk;
+          const newState = {
+            isStreaming: true,
+            message: newMessage,
+            counter: currentState.counter + 1
+          };
+          console.log('onStreamChunk: Setting streaming state from:', currentState, 'to:', newState);
+          updateStreamingState(newState);
           
           // Auto-detect panel updates based on content
-          if (!panelUpdatedRef.current && streamingMessageRef.current.length > 50) {
-            detectPanelContext(streamingMessageRef.current);
+          if (!panelUpdatedRef.current && newMessage.length > 50) {
+            console.log('onStreamChunk: Detecting panel context for:', newMessage.substring(0, 100));
+            detectPanelContext(newMessage);
             panelUpdatedRef.current = true;
           }
         },
         onStreamComplete: (fullResponse) => {
           // Handle stream completion
+          console.log('onStreamComplete: Full response received, length:', fullResponse.length);
           const assistantMessage = {
             role: 'assistant',
             content: fullResponse,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            tools: currentMessageTools.length > 0 ? [...currentMessageTools] : undefined
           };
           setMessages(prev => [...prev, assistantMessage]);
-          streamingMessageRef.current = '';
-          isStreamingRef.current = false;
-          setStreamingMessage('');
-          setIsStreaming(false);
+          updateStreamingState({ isStreaming: false, message: '', counter: 0 });
           setIsLoading(false);
-          setCurrentTool('');
+          console.log('onStreamComplete: Reset streaming state and added message to history');
+          // Don't immediately clear the tool, let it fade out
+          setTimeout(() => setCurrentTool(''), 2000);
         },
         onStreamError: (error) => {
           // Handle stream errors
-          console.error('Stream error:', error);
+          console.error('onStreamError:', error);
           setConnectionError(error.message || 'Failed to get response from AWS AgentCore');
           setIsLoading(false);
-          setIsStreaming(false);
-          setStreamingMessage('');
-          streamingMessageRef.current = '';
-          isStreamingRef.current = false;
+          updateStreamingState({ isStreaming: false, message: '', counter: 0 });
         },
         onToolUse: (toolName) => {
           // Handle tool usage indication
-          console.log('Agent is using tool:', toolName);
-          setCurrentTool(`Using ${toolName}...`);
+          console.log('onToolUse: Agent is using tool:', toolName);
+          const displayName = toolName.replace(/_/g, ' ').replace(/^get /, '').charAt(0).toUpperCase() + 
+                            toolName.replace(/_/g, ' ').replace(/^get /, '').slice(1);
+          setCurrentTool(`Accessing ${displayName}`);
+          setToolHistory(prev => [...prev, { tool: toolName, timestamp: Date.now() }]);
+          // Track tools for this message
+          if (!currentMessageTools.includes(toolName)) {
+            currentMessageTools.push(toolName);
+            console.log('onToolUse: Added tool to message tools:', toolName, 'Total tools:', currentMessageTools.length);
+          }
         }
       });
     } catch (error) {
@@ -201,7 +239,7 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
   };
 
   const handleSuggestionClick = (suggestion) => {
-    if (!isLoading && awsConfigValid) {
+    if (!isLoading && !streamingState.isStreaming && awsConfigValid) {
       setInput(suggestion);
     }
   };
@@ -332,6 +370,24 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
                   color: message.role === 'user' ? 'white' : 'text.primary'
                 }}
               >
+                {message.role === 'assistant' && message.tools && message.tools.length > 0 && (
+                  <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
+                    {message.tools.map((tool, idx) => (
+                      <Chip
+                        key={idx}
+                        icon={<Build sx={{ fontSize: 14 }} />}
+                        label={tool.replace(/_/g, ' ')}
+                        size="small"
+                        sx={{ 
+                          fontSize: '0.7rem',
+                          height: 20,
+                          backgroundColor: 'action.selected',
+                          color: 'primary.main'
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )}
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                   {message.content}
                 </Typography>
@@ -341,8 +397,9 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
         ))}
 
         {/* Streaming Message */}
-        {isStreaming && streamingMessage && (
-          <Box sx={{ mb: 2, display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+        {console.log('Render: Streaming state check:', streamingState)}
+        {(streamingState.message || streamingState.isStreaming) && (
+          <Box key={`streaming-${streamingState.counter}`} sx={{ mb: 2, display: 'flex', alignItems: 'flex-start', gap: 1 }}>
             <Avatar
               sx={{
                 width: 32,
@@ -364,7 +421,7 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
               }}
             >
               <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {streamingMessage}
+                {streamingState.message || "..."}
                 <Box 
                   component="span" 
                   sx={{ 
@@ -416,7 +473,7 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={awsConfigValid ? "Ask me about your schedule, policies, or submit requests..." : "AWS not configured..."}
-            disabled={!awsConfigValid || isLoading}
+            disabled={!awsConfigValid || isLoading || streamingState.isStreaming}
             variant="outlined"
             size="small"
             sx={{
@@ -427,7 +484,7 @@ const ChatPanel = ({ onPanelUpdate, staffInfo }) => {
           />
           <IconButton
             onClick={sendMessage}
-            disabled={!input.trim() || !awsConfigValid || isLoading}
+            disabled={!input.trim() || !awsConfigValid || isLoading || streamingState.isStreaming}
             color="primary"
             sx={{
               bgcolor: 'primary.main',
