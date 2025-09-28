@@ -384,7 +384,7 @@ This python script also creates:
 
 ```bash
 # Deploy MCP Gateway for tool access
-python deploy_staffcast_gateway.py
+cd strans-with-agentcore && python deploy_staffcast_gateway.py
 ```
 
 **Step 13: Check Amazon AgentCore Gateway using AWS Console**
