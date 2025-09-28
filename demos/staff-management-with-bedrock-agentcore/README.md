@@ -415,12 +415,10 @@ agentcore launch
 Lets test our agent using the agentcore cli.
 ```bash
 # Test Manager Portal (full roster management)
-agentcore configure --agent staffcast_agentcore
-agentcore invoke '{"prompt": "show me the roster for tomorrow"}'
+agentcore invoke '{"prompt": "show me the roster for tomorrow"}' --agent staffcast_agentcore
 
 # Test Staff Portal (policy search + personal data)
-agentcore configure --agent staffcast_staff_agentcore
-agentcore invoke '{"prompt": "What is the sick leave policy?"}'
+agentcore invoke '{"prompt": "What is the sick leave policy?"}' --agent staffcast_staff_agentcore
 ## in case you need to deploy in a different account, you may want to first delete this local xml file:
 #rm .bedrock_agentcore.yaml
 ```
