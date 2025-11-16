@@ -1,0 +1,67 @@
+{
+  "name": "AgentCore Advanced Script",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "agentcore-form-automation"
+    },
+    {
+      "parameters": {
+        "operation": "runScript",
+        "browserToolArn": "arn:aws:bedrock-agentcore:us-east-1:aws:browser/aws.browser.v1",
+        "startUrl": "https://example.com/form",
+        "timeoutMs": 120000,
+        "screenshotMode": "error",
+        "script": "// Wait for page to fully load\nawait page.waitForLoadState('networkidle');\n\n// Accept cookies if present\ntry {\n  await page.click('#accept-cookies', { timeout: 5000 });\n  await page.waitForTimeout(1000);\n} catch (e) {\n  // No cookies banner, continue\n}\n\n// Fill form with webhook data\nconst formData = {{ $json }};\n\nawait page.fill('#firstName', formData.firstName || '');\nawait page.fill('#lastName', formData.lastName || '');\nawait page.fill('#email', formData.email || '');\nawait page.fill('#phone', formData.phone || '');\nawait page.fill('#message', formData.message || '');\n\n// Select dropdown option\nawait page.selectOption('#subject', formData.subject || 'general');\n\n// Check checkbox\nawait page.check('#terms-agree');\n\n// Submit form\nawait page.click('button[type=\"submit\"]');\n\n// Wait for success message\ntry {\n  await page.waitForSelector('.success-message', { timeout: 10000 });\n  const successText = await page.textContent('.success-message');\n  \n  return {\n    success: true,\n    message: successText,\n    submittedAt: new Date().toISOString(),\n    formData: formData\n  };\n} catch (e) {\n  // Check for error message\n  const errorElement = await page.$('.error-message');\n  if (errorElement) {\n    const errorText = await errorElement.textContent();\n    return {\n      success: false,\n      error: errorText,\n      submittedAt: new Date().toISOString()\n    };\n  }\n  \n  throw new Error('Form submission timeout - no success or error message found');\n}"
+      },
+      "name": "Fill & Submit Form",
+      "type": "n8n-nodes-agentcore-browser.agentcoreBrowser",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "agentcoreBrowserApi": {
+          "id": "1",
+          "name": "AWS AgentCore"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.result }}"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fill & Submit Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fill & Submit Form": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

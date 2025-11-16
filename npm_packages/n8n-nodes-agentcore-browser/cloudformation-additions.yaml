@@ -1,0 +1,234 @@
+# CloudFormation Template Additions for AgentCore Browser N8N Node
+#
+# INSTRUCTIONS:
+# 1. Add the Parameters section to your Parameters section
+# 2. Add the SSM step to your CodeEditorSSMDoc mainSteps (after ConfigureN8n step)
+# 3. Update the docker-compose.yml section in ConfigureN8n step
+#
+# IMPORTANT: Test in a dev environment first!
+
+# ==============================================================================
+# SECTION 1: Add these parameters to your Parameters section (around line 76)
+# ==============================================================================
+Parameters:
+  AgentcoreBrowserGitRepo:
+    Type: String
+    Description: Git repository URL for AgentCore Browser node
+    Default: ''  # Leave empty if not using, or set to your repo URL
+
+  AgentcoreBrowserLocalPath:
+    Type: String
+    Description: Local path to AgentCore Browser node source code (if already on instance)
+    Default: ''  # Set this if code is already on the instance
+
+# ==============================================================================
+# SECTION 2: Add this step to mainSteps in CodeEditorSSMDoc
+# (Add AFTER the ConfigureN8n step, around line 1375)
+# ==============================================================================
+          - name: InstallAgentcoreBrowserNode
+            action: aws:runShellScript
+            inputs:
+              timeoutSeconds: 900
+              runCommand:
+                - '#!/bin/bash'
+                - set -euo pipefail
+                - !Sub |
+                  echo "=== Installing AgentCore Browser N8N Node ==="
+
+                  # Configuration
+                  AGENTCORE_REPO="${AgentcoreBrowserGitRepo}"
+                  AGENTCORE_LOCAL_PATH="${AgentcoreBrowserLocalPath}"
+                  N8N_CUSTOM_DIR="/opt/n8n/custom-nodes"
+                  NODE_NAME="n8n-nodes-agentcore-browser"
+
+                  # Skip if no source specified
+                  if [[ -z "$AGENTCORE_REPO" ]] && [[ -z "$AGENTCORE_LOCAL_PATH" ]]; then
+                    echo "No AgentCore Browser source specified. Skipping installation."
+                    exit 0
+                  fi
+
+                  # Create custom nodes directory
+                  mkdir -p $N8N_CUSTOM_DIR
+                  cd $N8N_CUSTOM_DIR
+
+                  # Get source code
+                  if [[ -n "$AGENTCORE_REPO" ]]; then
+                    echo "Cloning from repository: $AGENTCORE_REPO"
+                    git clone $AGENTCORE_REPO $NODE_NAME
+                    cd $NODE_NAME
+                  elif [[ -n "$AGENTCORE_LOCAL_PATH" ]]; then
+                    echo "Copying from local path: $AGENTCORE_LOCAL_PATH"
+                    cp -r $AGENTCORE_LOCAL_PATH $NODE_NAME
+                    cd $NODE_NAME
+                  fi
+
+                  echo "Installing dependencies..."
+                  npm install
+
+                  echo "Building the node..."
+                  npm run build
+
+                  if [ ! -d "dist" ]; then
+                    echo "ERROR: Build failed - dist directory not created"
+                    exit 1
+                  fi
+
+                  echo "AgentCore Browser node built successfully at: $N8N_CUSTOM_DIR/$NODE_NAME"
+                  ls -la $N8N_CUSTOM_DIR/$NODE_NAME/dist
+
+                  # Install Playwright browsers (needed for AgentCore Browser)
+                  echo "Installing Playwright..."
+                  npx playwright install-deps chromium
+
+                  echo "=== AgentCore Browser Node Installation Complete ==="
+
+          - name: UpdateN8nWithAgentcoreBrowser
+            action: aws:runShellScript
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -euo pipefail
+                - !Sub |
+                  echo "=== Updating N8N Configuration for AgentCore Browser ==="
+
+                  # Configuration
+                  AGENTCORE_REPO="${AgentcoreBrowserGitRepo}"
+                  AGENTCORE_LOCAL_PATH="${AgentcoreBrowserLocalPath}"
+
+                  # Skip if no source specified
+                  if [[ -z "$AGENTCORE_REPO" ]] && [[ -z "$AGENTCORE_LOCAL_PATH" ]]; then
+                    echo "No AgentCore Browser source specified. Skipping N8N update."
+                    exit 0
+                  fi
+
+                  cd /opt/n8n
+
+                  # Backup current docker-compose.yml
+                  cp docker-compose.yml docker-compose.yml.backup
+
+                  # Update docker-compose.yml to mount custom node
+                  # Add volume mount to all three services
+                  cat > docker-compose.yml <<'COMPOSE_EOF'
+                  version: '3.8'
+
+                  services:
+                    n8n-main:
+                      image: n8nio/n8n:latest
+                      container_name: n8n-main
+                      restart: unless-stopped
+                      ports:
+                        - "${N8nPort}:5678"
+                      environment:
+                        - DB_TYPE=postgresdb
+                        - DB_POSTGRESDB_HOST=$DB_HOST
+                        - DB_POSTGRESDB_PORT=$DB_PORT
+                        - DB_POSTGRESDB_DATABASE=n8ndb
+                        - DB_POSTGRESDB_USER=n8nadmin
+                        - DB_POSTGRESDB_PASSWORD=$DB_PASSWORD
+                        - N8N_ENCRYPTION_KEY=$ENCRYPTION_KEY
+                        - EXECUTIONS_MODE=queue
+                        - QUEUE_BULL_REDIS_HOST=$REDIS_HOST
+                        - QUEUE_BULL_REDIS_PORT=$REDIS_PORT
+                        - N8N_EDITOR_BASE_URL=https://$CLOUDFRONT_DOMAIN/
+                        - WEBHOOK_URL=https://$CLOUDFRONT_DOMAIN/
+                        - N8N_CUSTOM_EXTENSIONS=/custom-nodes
+                      volumes:
+                        - n8n_data:/home/node/.n8n
+                        - /opt/n8n/custom-nodes:/custom-nodes:ro
+                      networks:
+                        - n8n-network
+
+                    n8n-webhook:
+                      image: n8nio/n8n:latest
+                      container_name: n8n-webhook
+                      restart: unless-stopped
+                      command: webhook
+                      environment:
+                        - DB_TYPE=postgresdb
+                        - DB_POSTGRESDB_HOST=$DB_HOST
+                        - DB_POSTGRESDB_PORT=$DB_PORT
+                        - DB_POSTGRESDB_DATABASE=n8ndb
+                        - DB_POSTGRESDB_USER=n8nadmin
+                        - DB_POSTGRESDB_PASSWORD=$DB_PASSWORD
+                        - N8N_ENCRYPTION_KEY=$ENCRYPTION_KEY
+                        - EXECUTIONS_MODE=queue
+                        - QUEUE_BULL_REDIS_HOST=$REDIS_HOST
+                        - QUEUE_BULL_REDIS_PORT=$REDIS_PORT
+                        - WEBHOOK_URL=https://$CLOUDFRONT_DOMAIN/
+                        - N8N_CUSTOM_EXTENSIONS=/custom-nodes
+                      volumes:
+                        - n8n_data:/home/node/.n8n
+                        - /opt/n8n/custom-nodes:/custom-nodes:ro
+                      networks:
+                        - n8n-network
+
+                    n8n-worker:
+                      image: n8nio/n8n:latest
+                      container_name: n8n-worker
+                      restart: unless-stopped
+                      command: worker --concurrency=10
+                      environment:
+                        - DB_TYPE=postgresdb
+                        - DB_POSTGRESDB_HOST=$DB_HOST
+                        - DB_POSTGRESDB_PORT=$DB_PORT
+                        - DB_POSTGRESDB_DATABASE=n8ndb
+                        - DB_POSTGRESDB_USER=n8nadmin
+                        - DB_POSTGRESDB_PASSWORD=$DB_PASSWORD
+                        - N8N_ENCRYPTION_KEY=$ENCRYPTION_KEY
+                        - EXECUTIONS_MODE=queue
+                        - QUEUE_BULL_REDIS_HOST=$REDIS_HOST
+                        - QUEUE_BULL_REDIS_PORT=$REDIS_PORT
+                        - N8N_CUSTOM_EXTENSIONS=/custom-nodes
+                      volumes:
+                        - n8n_data:/home/node/.n8n
+                        - /opt/n8n/custom-nodes:/custom-nodes:ro
+                      networks:
+                        - n8n-network
+
+                  volumes:
+                    n8n_data:
+
+                  networks:
+                    n8n-network:
+                      driver: bridge
+                  COMPOSE_EOF
+
+                  # Substitute variables (same as original)
+                  export AWS_REGION=${AWS::Region}
+                  DB_HOST=$(echo "$DB_HOST" | envsubst)
+                  # ... (keep all the original variable substitution)
+
+                  # Restart N8N to pick up the custom node
+                  echo "Restarting N8N with custom node..."
+                  docker-compose down
+                  docker-compose up -d
+
+                  echo "Waiting for N8N to start..."
+                  sleep 30
+
+                  echo "N8N updated with AgentCore Browser node. Checking status:"
+                  docker-compose ps
+                  docker-compose logs --tail=50 n8n-main
+
+                  echo "=== N8N Update Complete ==="
+
+# ==============================================================================
+# VALIDATION CHECKLIST
+# ==============================================================================
+# Before deploying:
+# [ ] Set AgentcoreBrowserGitRepo parameter (e.g., https://github.com/youruser/n8n-nodes-agentcore-browser)
+# [ ] OR set AgentcoreBrowserLocalPath (e.g., /workshop/agentcore_browser_extension)
+# [ ] Verify EC2 instance has git installed (already in template)
+# [ ] Verify Node.js and npm are installed (already in template)
+# [ ] Test docker-compose.yml changes don't break existing N8N
+# [ ] Verify AgentCore Browser IAM permissions are in place (already have AdministratorAccess)
+
+# ==============================================================================
+# ROLLBACK PLAN
+# ==============================================================================
+# If something goes wrong:
+# 1. SSH into EC2 instance
+# 2. cd /opt/n8n
+# 3. cp docker-compose.yml.backup docker-compose.yml
+# 4. docker-compose down && docker-compose up -d

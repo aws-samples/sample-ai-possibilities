@@ -1,0 +1,85 @@
+{
+  "name": "AgentCore Search & Extract",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "navigateExtract",
+        "browserToolArn": "arn:aws:bedrock-agentcore:us-east-1:aws:browser/aws.browser.v1",
+        "startUrl": "https://example.com",
+        "selector": ".search-result h2",
+        "extractMode": "text",
+        "takeScreenshot": true,
+        "fullPageScreenshot": true,
+        "waitForSelector": ".results-container",
+        "actions": {
+          "action": [
+            {
+              "type": "type",
+              "selector": "#search-input",
+              "value": "laptop computers"
+            },
+            {
+              "type": "press",
+              "selector": "#search-input",
+              "value": "Enter"
+            },
+            {
+              "type": "wait",
+              "value": "3000"
+            }
+          ]
+        }
+      },
+      "name": "Search & Extract Results",
+      "type": "n8n-nodes-agentcore-browser.agentcoreBrowser",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "agentcoreBrowserApi": {
+          "id": "1",
+          "name": "AWS AgentCore"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Split the array data into individual items\nconst results = $json.data;\n\nif (Array.isArray(results)) {\n  return results.map((result, index) => ({\n    json: {\n      position: index + 1,\n      title: result,\n      extractedAt: new Date().toISOString(),\n      sourceUrl: $json.url\n    }\n  }));\n}\n\nreturn [];"
+      },
+      "name": "Split Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search & Extract Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search & Extract Results": {
+      "main": [
+        [
+          {
+            "node": "Split Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
