@@ -1,0 +1,39 @@
+# Source files
+*.ts
+!*.d.ts
+tsconfig.json
+
+# Development files
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Documentation (keep only essentials)
+CONTRIBUTING.md
+examples/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+*.tsbuildinfo
+coverage/
+.nyc_output/
+
+# Local test scripts
+test-before-cfn.sh
+build.log
