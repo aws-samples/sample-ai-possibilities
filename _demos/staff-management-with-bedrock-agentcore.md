@@ -1,6 +1,6 @@
 ---
 title: "StaffCast - AI-Powered Dual-Portal Staff Management System"
-date: 2025-09-28
+date: 2025-12-10
 description: "- **Educational Purpose**: This project demonstrates AI integration patterns and is not production-ready
 - **Model Access**: Ensure your AWS account has access to Claude 3.5 Sonnet and Nova Canvas in your region
 - **Cost Management**: Monitor usage of Bedrock models, S3 storage, DynamoDB, Opensearch and other services involved - implement cost controls for production
