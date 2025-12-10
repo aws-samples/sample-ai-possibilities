@@ -34,12 +34,6 @@ Medium
 ## Prerequisites
 - Node.js (v16 or higher)
 - AWS Account with Bedrock access
-- **Amazon Nova Sonic model enabled in Bedrock**:
-  1. Go to AWS Bedrock Console
-  2. Navigate to "Model access" in the left sidebar
-  3. Click "Manage model access"
-  4. Find "Amazon Nova Sonic" and enable it
-  5. Wait for the status to show "Access granted"
 - **IAM permissions configured** (see [Required IAM Permissions](#required-iam-permissions) section below)
 - AWS CLI configured with appropriate credentials
 - Modern web browser with WebAudio API support
