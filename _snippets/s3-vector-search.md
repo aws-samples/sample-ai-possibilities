@@ -1,6 +1,6 @@
 ---
 title: "Getting Started with Amazon S3 Vectors and Bedrock Embeddings"
-date: 2025-12-10
+date: 2026-02-05
 description: "This library is licensed under the MIT-0 License. See the [LICENSE](../../LICENSE) file."
 layout: snippet
 difficulty: easy
