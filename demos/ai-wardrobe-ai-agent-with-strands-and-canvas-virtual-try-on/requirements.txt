@@ -17,7 +17,7 @@ strands-agents-tools
 mcp
 
 # Image processing
-Pillow==10.3.0
+Pillow==12.1.1
 
 # Data handling
 pydantic>=2.5.0
