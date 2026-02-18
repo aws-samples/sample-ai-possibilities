@@ -63,7 +63,7 @@ Intermediate
 | `04_code_interpreter_highlevel_api.py` | AgentCore SDK (direct) | Execute code directly without a model. Useful for batch jobs, testing, or when you already know what code to run. |
 | `05_claude_code_in_code_interpreter/` | Claude Code in sandbox | Run Claude Code CLI inside a Code Interpreter sandbox. Requires a custom Code Interpreter with PUBLIC network mode and an IAM execution role. See [05 README](05_claude_code_in_code_interpreter/README.md). |
 | `06_invoke_model_with_caching.py` | InvokeModel + Prompt Caching | Demonstrates Bedrock prompt caching to reduce cost and latency in agentic loops. Uses a regional model ID (required for caching). |
-| `07_programmatic_tool_calling.py` | Programmatic Tool Calling | Achieves the same efficiency gains as Anthropic's programmatic tool calling: pre-loads tools into the sandbox so the model can call multiple tools in a single code execution — reducing round-trips and token usage. |
+| `07_programmatic_tool_calling.py` | Programmatic Tool Calling | Demonstrates the programmatic tool calling pattern on Bedrock: pre-loads tools into the sandbox so the model can call multiple tools in a single code execution — reducing round-trips and token usage. |
 
 ### Choosing the Right Approach
 
@@ -79,7 +79,7 @@ Intermediate
 
 Most examples (01-04, 06, 07) use the **default sandbox** (`aws.codeinterpreter.v1`) — no network access, no custom setup. This is sufficient for computation, data analysis, and demos with static data.
 
-For **real tool integrations** (APIs, databases, AWS services), use a **custom Code Interpreter with PUBLIC network mode** and an IAM execution role. This is what closes the functional gap with Anthropic's programmatic tool calling — your pre-loaded functions can make real HTTP/SDK calls directly from inside the sandbox. See `05_claude_code_in_code_interpreter/` for setup.
+For **real tool integrations** (APIs, databases, AWS services), use a **custom Code Interpreter with PUBLIC network mode** and an IAM execution role. This lets your pre-loaded functions make real HTTP/SDK calls directly from inside the sandbox. See `05_claude_code_in_code_interpreter/` for setup.
 
 | Network Mode | Use Case | Setup |
 |---|---|---|
