@@ -1,16 +1,14 @@
 """
-07 - Programmatic Tool Calling with AgentCore Code Interpreter
+07 - Programmatic Tool Calling Pattern with AgentCore Code Interpreter
 
-Replicates Anthropic's "programmatic tool calling" pattern on Bedrock.
+Achieves the same efficiency gains as Anthropic's programmatic tool calling
+on Bedrock: reduced round-trips, data processed in code, and only summaries
+returned to the model's context window.
 
 Instead of one model round-trip per tool call:
 
   Traditional:  Model → tool_A → Model → tool_B → Model → tool_C → Model
   Programmatic: Model → code(tool_A, tool_B, tool_C) → Model
-
-The model writes Python code that calls multiple tools in a single execution,
-processes/filters results in code, and returns only what's needed back to the
-model. This cuts both latency and token usage for multi-tool workflows.
 
 How it works:
   1. Pre-load your tool functions into the Code Interpreter sandbox session
@@ -18,10 +16,26 @@ How it works:
   3. Model writes Python that calls the tools and processes results
   4. One code execution replaces multiple tool round-trips
 
-NOTE: The tools here are simulated with static data for demo purposes.
-In production, these would call real APIs, databases, or AWS services.
-If your tools need internet access, use a custom Code Interpreter with
-PUBLIC network mode (see 05_claude_code_in_code_interpreter/).
+Architectural note — Anthropic vs. this pattern:
+  Anthropic's managed PTC uses a pause-and-resume mechanism: the code container
+  pauses when a tool is called, dispatches execution back to YOUR application,
+  then resumes with the result. Tools run client-side.
+
+  This pattern pre-loads tool functions INTO the sandbox so they execute directly
+  inside it. The efficiency outcome is the same (fewer round-trips, data filtering
+  in code, only processed results reach the model), but the tools run in the
+  sandbox rather than being dispatched to the client.
+
+  Both approaches keep intermediate tool results OUT of the model's context —
+  only the final printed output is returned.
+
+NOTE: The tools here use static data for demo purposes. In production, replace
+them with real API calls, SDK calls, or DB queries. If your tools need internet
+access, use a custom Code Interpreter with PUBLIC network mode (see
+05_claude_code_in_code_interpreter/).
+
+NOTE: This pattern works with any API — InvokeModel (shown here), Converse API,
+or Strands Agents. The core idea (pre-load tools, model writes code) is the same.
 
 Requirements:
     pip install boto3 bedrock-agentcore
