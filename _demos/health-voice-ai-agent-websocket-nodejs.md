@@ -1,6 +1,6 @@
 ---
 title: "Health Guide Assistant: Amazon Nova Sonic with Amazon Bedrock Knowledge Bases"
-date: 2025-12-10
+date: 2026-02-18
 description: "**This project is for educational purposes and not designed for production use.**"
 layout: demo
 difficulty: medium
