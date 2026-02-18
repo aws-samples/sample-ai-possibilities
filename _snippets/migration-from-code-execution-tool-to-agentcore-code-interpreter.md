@@ -7,7 +7,7 @@ difficulty: intermediate
 source_folder: "snippets/migration-from-code-execution-tool-to-agentcore-code-interpreter"
 
 tags:
-  - `migration`, `code-interpreter`, `bedrock`, `agentcore`, `anthropic`, `strands`, `prompt-caching`, `claude-code`
+  - `migration`, `code-interpreter`, `bedrock`, `agentcore`, `anthropic`, `strands`, `prompt-caching`, `claude-code`, `programmatic-tool-calling`
 technologies:
   - Amazon Bedrock (Claude via Converse API and InvokeModel API)
   - Amazon Bedrock AgentCore Code Interpreter
@@ -24,7 +24,7 @@ technologies:
 
 This snippet shows how to migrate from the **Anthropic API Code Execution tool** to **Amazon Bedrock + AgentCore Code Interpreter**. It provides side-by-side working examples: the original Anthropic approach (one API call, everything handled server-side) and multiple equivalent implementations on AWS.
 
-All examples (00-04, 06) use the same prompt — *"Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"* — so you can directly compare the code and output across approaches.
+All examples (00-04, 06) use the same prompt (a simple math calculation) — *"Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"* — so you can directly compare the code and output across approaches.
 
 ### Key Architectural Difference
 
@@ -36,7 +36,7 @@ All examples (00-04, 06) use the same prompt — *"Calculate the mean and standa
 
 ## Tags
 
-`migration`, `code-interpreter`, `bedrock`, `agentcore`, `anthropic`, `strands`, `prompt-caching`, `claude-code`
+`migration`, `code-interpreter`, `bedrock`, `agentcore`, `anthropic`, `strands`, `prompt-caching`, `claude-code`, `programmatic-tool-calling`
 
 ## Technologies
 
@@ -63,6 +63,7 @@ Intermediate
 | `04_code_interpreter_highlevel_api.py` | AgentCore SDK (direct) | Execute code directly without a model. Useful for batch jobs, testing, or when you already know what code to run. |
 | `05_claude_code_in_code_interpreter/` | Claude Code in sandbox | Run Claude Code CLI inside a Code Interpreter sandbox. Requires a custom Code Interpreter with PUBLIC network mode and an IAM execution role. See [05 README](05_claude_code_in_code_interpreter/README.md). |
 | `06_invoke_model_with_caching.py` | InvokeModel + Prompt Caching | Demonstrates Bedrock prompt caching to reduce cost and latency in agentic loops. Uses a regional model ID (required for caching). |
+| `07_programmatic_tool_calling.py` | Programmatic Tool Calling | Pre-loads tool functions into the sandbox so the model can call multiple tools in a single code execution — reducing round-trips and token usage. |
 
 ### Choosing the Right Approach
 
@@ -72,6 +73,7 @@ Intermediate
 - **Don't need a model?** Use `04` (direct) — just run code in a sandbox.
 - **Want a full coding agent in a sandbox?** Use `05` (Claude Code) — runs the full Claude Code CLI inside Code Interpreter.
 - **Optimizing cost for agentic loops?** Use `06` (caching) — caches system prompt and tools across repeated calls.
+- **Calling many tools per turn?** Use `07` (programmatic) — model writes code that calls all tools at once, reducing round-trips.
 
 ### Model ID Notes
 
@@ -117,6 +119,9 @@ python 04_code_interpreter_highlevel_api.py
 
 # InvokeModel with prompt caching
 python 06_invoke_model_with_caching.py
+
+# Programmatic tool calling (multiple tools in one code execution)
+python 07_programmatic_tool_calling.py
 
 # Claude Code in sandbox (see 05_claude_code_in_code_interpreter/README.md)
 cd 05_claude_code_in_code_interpreter
