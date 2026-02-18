@@ -1,9 +1,9 @@
 """
 07 - Programmatic Tool Calling Pattern with AgentCore Code Interpreter
 
-Achieves the same efficiency gains as Anthropic's programmatic tool calling
-on Bedrock: reduced round-trips, data processed in code, and only summaries
-returned to the model's context window.
+Demonstrates the programmatic tool calling pattern on Bedrock: reduced
+round-trips, data processed in code, and only summaries returned to the
+model's context window.
 
 Instead of one model round-trip per tool call:
 
@@ -38,10 +38,10 @@ Network modes and real tools:
 
   - PUBLIC network mode (custom Code Interpreter): Tools can make real HTTP
     requests, AWS SDK calls, and database queries directly from inside the
-    sandbox. Combined with an IAM execution role for credentials, this closes
-    the functional gap with Anthropic's PTC — your pre-loaded functions call
-    real services, process the results in code, and only the summary reaches
-    the model. See 05_claude_code_in_code_interpreter/ for setup.
+    sandbox. Combined with an IAM execution role for credentials, your
+    pre-loaded functions can call real services, process the results in code,
+    and return only the summary to the model.
+    See 05_claude_code_in_code_interpreter/ for setup.
 
   Example of a real tool in PUBLIC mode:
     def get_weather(city: str) -> dict:
