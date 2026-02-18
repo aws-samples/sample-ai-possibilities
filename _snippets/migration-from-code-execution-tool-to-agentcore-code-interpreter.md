@@ -75,6 +75,17 @@ Intermediate
 - **Optimizing cost for agentic loops?** Use `06` (caching) — caches system prompt and tools across repeated calls.
 - **Calling many tools per turn?** Use `07` (programmatic) — model writes code that calls all tools at once, reducing round-trips.
 
+### Network Mode Impact
+
+Most examples (01-04, 06, 07) use the **default sandbox** (`aws.codeinterpreter.v1`) — no network access, no custom setup. This is sufficient for computation, data analysis, and demos with static data.
+
+For **real tool integrations** (APIs, databases, AWS services), use a **custom Code Interpreter with PUBLIC network mode** and an IAM execution role. This is what closes the functional gap with Anthropic's programmatic tool calling — your pre-loaded functions can make real HTTP/SDK calls directly from inside the sandbox. See `05_claude_code_in_code_interpreter/` for setup.
+
+| Network Mode | Use Case | Setup |
+|---|---|---|
+| Default (no network) | Computation, data analysis, demos | None — works out of the box |
+| PUBLIC + IAM role | Real API calls, DB queries, AWS SDK | Custom Code Interpreter ([setup guide](05_claude_code_in_code_interpreter/README.md)) |
+
 ### Model ID Notes
 
 - Scripts 01-04 use `global.anthropic.claude-sonnet-4-6` (cross-region routing for lowest latency).

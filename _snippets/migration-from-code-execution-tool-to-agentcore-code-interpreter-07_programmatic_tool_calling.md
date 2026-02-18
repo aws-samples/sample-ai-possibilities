@@ -33,10 +33,24 @@ Architectural note — Anthropic vs. this pattern:
   Both approaches keep intermediate tool results OUT of the model's context —
   only the final printed output is returned.
 
-NOTE: The tools here use static data for demo purposes. In production, replace
-them with real API calls, SDK calls, or DB queries. If your tools need internet
-access, use a custom Code Interpreter with PUBLIC network mode (see
-05_claude_code_in_code_interpreter/).
+Network modes and real tools:
+  This example uses the default sandbox (aws.codeinterpreter.v1) with static
+  data — no network needed. In production, you have two options:
+
+  - DEFAULT (no network): Tools must be self-contained (static data, local
+    computation). Good for demos, testing, and data processing.
+
+  - PUBLIC network mode (custom Code Interpreter): Tools can make real HTTP
+    requests, AWS SDK calls, and database queries directly from inside the
+    sandbox. Combined with an IAM execution role for credentials, this closes
+    the functional gap with Anthropic's PTC — your pre-loaded functions call
+    real services, process the results in code, and only the summary reaches
+    the model. See 05_claude_code_in_code_interpreter/ for setup.
+
+  Example of a real tool in PUBLIC mode:
+    def get_weather(city: str) -> dict:
+        resp = requests.get(f"https://api.weather.com/v1/current?city={city}")
+        return resp.json()
 
 NOTE: This pattern works with any API — InvokeModel (shown here), Converse API,
 or Strands Agents. The core idea (pre-load tools, model writes code) is the same.
@@ -81,10 +95,24 @@ Architectural note — Anthropic vs. this pattern:
   Both approaches keep intermediate tool results OUT of the model's context —
   only the final printed output is returned.
 
-NOTE: The tools here use static data for demo purposes. In production, replace
-them with real API calls, SDK calls, or DB queries. If your tools need internet
-access, use a custom Code Interpreter with PUBLIC network mode (see
-05_claude_code_in_code_interpreter/).
+Network modes and real tools:
+  This example uses the default sandbox (aws.codeinterpreter.v1) with static
+  data — no network needed. In production, you have two options:
+
+  - DEFAULT (no network): Tools must be self-contained (static data, local
+    computation). Good for demos, testing, and data processing.
+
+  - PUBLIC network mode (custom Code Interpreter): Tools can make real HTTP
+    requests, AWS SDK calls, and database queries directly from inside the
+    sandbox. Combined with an IAM execution role for credentials, this closes
+    the functional gap with Anthropic's PTC — your pre-loaded functions call
+    real services, process the results in code, and only the summary reaches
+    the model. See 05_claude_code_in_code_interpreter/ for setup.
+
+  Example of a real tool in PUBLIC mode:
+    def get_weather(city: str) -> dict:
+        resp = requests.get(f"https://api.weather.com/v1/current?city={city}")
+        return resp.json()
 
 NOTE: This pattern works with any API — InvokeModel (shown here), Converse API,
 or Strands Agents. The core idea (pre-load tools, model writes code) is the same.
@@ -127,10 +155,24 @@ Architectural note — Anthropic vs. this pattern:
   Both approaches keep intermediate tool results OUT of the model's context —
   only the final printed output is returned.
 
-NOTE: The tools here use static data for demo purposes. In production, replace
-them with real API calls, SDK calls, or DB queries. If your tools need internet
-access, use a custom Code Interpreter with PUBLIC network mode (see
-05_claude_code_in_code_interpreter/).
+Network modes and real tools:
+  This example uses the default sandbox (aws.codeinterpreter.v1) with static
+  data — no network needed. In production, you have two options:
+
+  - DEFAULT (no network): Tools must be self-contained (static data, local
+    computation). Good for demos, testing, and data processing.
+
+  - PUBLIC network mode (custom Code Interpreter): Tools can make real HTTP
+    requests, AWS SDK calls, and database queries directly from inside the
+    sandbox. Combined with an IAM execution role for credentials, this closes
+    the functional gap with Anthropic's PTC — your pre-loaded functions call
+    real services, process the results in code, and only the summary reaches
+    the model. See 05_claude_code_in_code_interpreter/ for setup.
+
+  Example of a real tool in PUBLIC mode:
+    def get_weather(city: str) -> dict:
+        resp = requests.get(f"https://api.weather.com/v1/current?city={city}")
+        return resp.json()
 
 NOTE: This pattern works with any API — InvokeModel (shown here), Converse API,
 or Strands Agents. The core idea (pre-load tools, model writes code) is the same.
