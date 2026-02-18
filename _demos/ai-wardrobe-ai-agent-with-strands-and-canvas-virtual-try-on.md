@@ -1,6 +1,6 @@
 ---
 title: "AI Unicorn Wardrobe: AI Agent with Strands SDK and Amazon Nova Canvas Virtual Try On"
-date: 2025-12-10
+date: 2026-02-18
 description: "- **Educational Purpose**: This project demonstrates AI integration patterns and is not production-ready
 - **Model Access**: Ensure your AWS account has access to Claude 3.5 Sonnet and Nova Canvas in your region
 - **Cost Management**: Monitor usage of Bedrock models and S3 storage - implement cost controls for production

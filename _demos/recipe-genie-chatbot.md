@@ -1,6 +1,6 @@
 ---
 title: "Recipe Genie - Real-time Data Integration with Amazon Bedrock Agents and MCP"
-date: 2025-12-10
+date: 2026-02-18
 description: "This library is licensed under the MIT-0 License. See the [LICENSE](../../LICENSE) file."
 layout: demo
 difficulty: medium
