@@ -14,9 +14,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-bedrock-agent-runtime": "^3.782",
-    "@aws-sdk/client-bedrock-runtime": "^3.785",
-    "@aws-sdk/credential-providers": "^3.782",
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.995",
+    "@aws-sdk/client-bedrock-runtime": "^3.995",
+    "@aws-sdk/credential-providers": "^3.995",
     "@smithy/node-http-handler": "^4.0.4",
     "@smithy/types": "^4.1.0",
     "@types/express": "^5.0.0",
