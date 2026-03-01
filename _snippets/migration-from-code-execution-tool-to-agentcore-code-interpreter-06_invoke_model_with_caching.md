@@ -1,6 +1,6 @@
 ---
 title: "06 Invoke Model With Caching"
-date: 2026-02-18
+date: 2026-03-01
 layout: snippet
 language: python
 description: "06 - Bedrock InvokeModel API + Prompt Caching + AgentCore Code Interpreter
