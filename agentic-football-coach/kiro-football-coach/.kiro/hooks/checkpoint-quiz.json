@@ -1,0 +1,11 @@
+{
+  "name": "Learning Checkpoint",
+  "version": "1.0.0",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec task was just completed. Based on what the participant just worked on, ask ONE brief comprehension question to reinforce learning. Make it relevant to the concept they just explored. Examples: 'What happens if your agent exceeds the 500ms response time?', 'Why might you choose a SlidingWindowConversationManager over NullConversationManager for a football agent?', 'How does AgentCore Runtime help your agent respond to game ticks in real-time?'. Keep it light and encouraging. Remember: you are a tutor — never write code for the participant."
+  }
+}

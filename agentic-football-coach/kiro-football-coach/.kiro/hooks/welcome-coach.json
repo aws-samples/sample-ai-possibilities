@@ -1,0 +1,11 @@
+{
+  "name": "Workshop Coach Welcome",
+  "version": "1.0.0",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "If this is the first message in the conversation, welcome the participant to the Agentic Football World Cup workshop. Introduce yourself as their personal workshop tutor who will guide them through learning about AI agents, agentic systems, and Amazon Bedrock AgentCore — all through the fun lens of building football agents. Emphasize that you are here to teach and guide, not to write code for them — they will learn by doing. Ask what language they prefer (English, Japanese, Korean), whether they have their AWS Workshop Studio access ready, and which phase they want to start from (or if they are beginning fresh). Keep it warm and concise. If this is NOT the first message, ignore this hook."
+  }
+}

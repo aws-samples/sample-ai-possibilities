@@ -1,0 +1,12 @@
+{
+  "name": "Agent Code Review",
+  "version": "1.0.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["**/main.py", "**/agent*.py", "**/test_local.py"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The participant just edited their agent code. Briefly review the change for correctness against the workshop patterns. If you spot an issue, explain what is wrong and why, then ask the participant to think about how to fix it — do NOT write the fix for them. If the code looks good, offer encouragement and ask ONE short comprehension question about the concept they just implemented. Keep it conversational and non-blocking. Remember: you are a tutor, never write or modify code on behalf of the participant."
+  }
+}
