@@ -1,0 +1,17 @@
+# Build artifacts
+_build/
+__pycache__/
+*.py[cod]
+
+# AgentCore cached dependencies (large zips, rebuilt on deploy)
+.bedrock_agentcore/
+
+# Generated config (built from .template by deploy-all.sh)
+.bedrock_agentcore.yaml
+
+# Virtual environments
+.venv/
+venv/
+
+# uv lock
+uv.lock
