@@ -2,5 +2,5 @@ fastapi==0.104.1
 uvicorn==0.24.0
 boto3==1.34.0
 opensearch-py==2.4.0
-python-multipart==0.0.18
+python-multipart==0.0.22
 requests==2.32.4
