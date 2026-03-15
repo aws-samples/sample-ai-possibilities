@@ -41,7 +41,7 @@ def test_fallback_shoot():
     """FWD2 has ball near opponent goal — should SHOOT."""
     print(f"=== FALLBACK SHOOT ({POSITION_LABEL}) ===")
     state = json.loads(json.dumps(GAME_STATE))
-    state["ball"]["possessionPlayerId"] = MY_PLAYER_ID
+    state["ball"]["possessionAgentId"] = f"agentId_{MY_PLAYER_ID}"
     state["players"][4]["position"] = {"x": 40, "y": 8}  # near opp goal
     cmds = fallback_commands(state, TEAM_ID, MY_PLAYER_ID)
     for c in cmds:
@@ -56,7 +56,7 @@ def test_fallback_advance():
     """FWD2 has ball far from goal — should advance with MOVE_TO."""
     print(f"=== FALLBACK ADVANCE ({POSITION_LABEL}) ===")
     state = json.loads(json.dumps(GAME_STATE))
-    state["ball"]["possessionPlayerId"] = MY_PLAYER_ID
+    state["ball"]["possessionAgentId"] = f"agentId_{MY_PLAYER_ID}"
     state["players"][4]["position"] = {"x": 10, "y": 8}  # far from goal
     cmds = fallback_commands(state, TEAM_ID, MY_PLAYER_ID)
     for c in cmds:

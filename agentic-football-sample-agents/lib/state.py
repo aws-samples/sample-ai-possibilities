@@ -3,6 +3,40 @@
 import math
 
 
+# ---------------------------------------------------------------------------
+# Format-agnostic helpers — handle both new (agentId/teamCode/possessionAgentId)
+# and old (playerId/teamId/possessionPlayerId) game server formats.
+# ---------------------------------------------------------------------------
+
+def _player_idx(p: dict) -> int:
+    """Numeric index (0-4) from a player dict — new agentId or old playerId."""
+    if "agentId" in p:
+        try:
+            return int(p["agentId"].rsplit("_", 1)[-1])
+        except (ValueError, IndexError):
+            return 0
+    return p.get("playerId", 0)
+
+
+def _is_my_team(p: dict, team_id: int) -> bool:
+    """True if player belongs to team_id — new teamCode or old teamId."""
+    if "teamCode" in p:
+        return p["teamCode"] == ("home" if team_id == 0 else "away")
+    return p.get("teamId") == team_id
+
+
+def _possession_idx(ball: dict):
+    """Numeric possession player index from ball dict — new possessionAgentId or old possessionPlayerId.
+    Returns int or None."""
+    agent_id = ball.get("possessionAgentId")
+    if agent_id is not None:
+        try:
+            return int(agent_id.rsplit("_", 1)[-1])
+        except (ValueError, IndexError):
+            return None
+    return ball.get("possessionPlayerId")
+
+
 def get_goal_positions(team_id: int) -> tuple[float, float]:
     """Return (my_goal_x, opp_goal_x) based on team."""
     if team_id == 0:
@@ -12,11 +46,11 @@ def get_goal_positions(team_id: int) -> tuple[float, float]:
 
 def get_possession_info(ball: dict, players: list, team_id: int) -> tuple:
     """Return (possession_id, ball_status_str, we_have_ball)."""
-    possession_id = ball.get("possessionPlayerId")
+    possession_id = _possession_idx(ball)
     if possession_id is not None:
-        holder = next((p for p in players if p.get("playerId") == possession_id), None)
+        holder = next((p for p in players if _player_idx(p) == possession_id), None)
         if holder:
-            is_mine = holder.get("teamId") == team_id
+            is_mine = _is_my_team(holder, team_id)
             side = "MY" if is_mine else "OPP"
             return possession_id, f"{side} player {possession_id}", is_mine
         return possession_id, "unknown", False
@@ -46,15 +80,15 @@ def summarize_state(
     players = game_state.get("players", [])
 
     my_team = sorted(
-        [p for p in players if p.get("teamId") == team_id],
-        key=lambda p: p.get("playerId", 0),
+        [p for p in players if _is_my_team(p, team_id)],
+        key=lambda p: _player_idx(p),
     )
     opponents = sorted(
-        [p for p in players if p.get("teamId") != team_id],
-        key=lambda p: p.get("playerId", 0),
+        [p for p in players if not _is_my_team(p, team_id)],
+        key=lambda p: _player_idx(p),
     )
 
-    me = next((p for p in my_team if p.get("playerId") == my_player_id), None)
+    me = next((p for p in my_team if _player_idx(p) == my_player_id), None)
     possession_id, ball_status, _ = get_possession_info(ball, players, team_id)
 
     my_goal_x, opp_goal_x = get_goal_positions(team_id)
@@ -84,10 +118,10 @@ def summarize_state(
     # Teammates
     lines.append("Teammates:")
     for p in my_team:
-        if p.get("playerId") == my_player_id:
+        if _player_idx(p) == my_player_id:
             continue
         pos = p.get("position", {})
-        pid = p.get("playerId", 0)
+        pid = _player_idx(p)
         role = "GK" if pid == 0 else f"P{pid}"
         extra = ""
         if position_label == "MID":
@@ -101,7 +135,7 @@ def summarize_state(
     lines.append(opp_header)
     for p in opponents:
         pos = p.get("position", {})
-        pid = p.get("playerId", 0)
+        pid = _player_idx(p)
         d_goal = abs(pos.get("x", 0) - my_goal_x)
         d_me = dist(pos, me.get("position", {})) if me else 0
         lines.append(f"  P{pid}: ({pos.get('x',0):.1f},{pos.get('y',0):.1f}) distToMyGoal={d_goal:.1f} distToMe={d_me:.1f}")

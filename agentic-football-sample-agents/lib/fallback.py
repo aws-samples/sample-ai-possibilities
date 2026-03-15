@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
 
-from state import get_goal_positions, get_possession_info, dist
+from state import get_goal_positions, get_possession_info, dist, _player_idx, _is_my_team, _possession_idx
 
 
 @dataclass
@@ -144,11 +144,11 @@ def build_fallback(cfg: FallbackConfig) -> Callable[[dict, int, int], list[dict]
         ball = game_state.get("ball", {})
         ball_pos = ball.get("position", {"x": 0, "y": 0})
         players = game_state.get("players", [])
-        possession_id = ball.get("possessionPlayerId")
+        possession_id = _possession_idx(ball)
         my_goal_x, opp_goal_x = get_goal_positions(team_id)
 
         me = next(
-            (p for p in players if p.get("playerId") == my_player_id and p.get("teamId") == team_id),
+            (p for p in players if _player_idx(p) == my_player_id and _is_my_team(p, team_id)),
             None,
         )
         if not me:
@@ -162,12 +162,12 @@ def build_fallback(cfg: FallbackConfig) -> Callable[[dict, int, int], list[dict]
 
         # --- DEF: mark dangerous opponent ---
         if cfg.mark_threshold > 0:
-            opponents = [p for p in players if p.get("teamId") != team_id]
+            opponents = [p for p in players if not _is_my_team(p, team_id)]
             if opponents:
                 dangerous = min(opponents, key=lambda p: abs(p.get("position", {}).get("x", 0) - my_goal_x))
                 if abs(dangerous.get("position", {}).get("x", 0) - my_goal_x) < cfg.mark_threshold:
                     return [_cmd("MARK", my_player_id, team_id,
-                                 {"target_player_id": dangerous.get("playerId", 0),
+                                 {"target_player_id": _player_idx(dangerous),
                                   "tightness": cfg.mark_tightness}, duration=3)]
 
         # --- Teammate has ball → support run (forwards) ---
@@ -204,21 +204,21 @@ def _cmd(cmd_type: str, pid: int, tid: int, params: dict, duration: int = 0) -> 
 def _on_ball(cfg, game_state, players, team_id, my_player_id, pos, my_goal_x, opp_goal_x):
     """Handle possession for all position types."""
     if cfg.possession_action == "GK_DISTRIBUTE":
-        teammates = [p for p in players if p.get("teamId") == team_id and p.get("playerId") != my_player_id]
+        teammates = [p for p in players if _is_my_team(p, team_id) and _player_idx(p) != my_player_id]
         if teammates:
             nearest = min(teammates, key=lambda p: dist(p.get("position", {}), pos))
             return [_cmd("GK_DISTRIBUTE", my_player_id, team_id,
-                         {"target_player_id": nearest.get("playerId", 1), "method": "THROW"})]
+                         {"target_player_id": _player_idx(nearest), "method": "THROW"})]
         return [_cmd("GK_DISTRIBUTE", my_player_id, team_id,
                      {"target_player_id": 1, "method": "THROW"})]
 
     if cfg.possession_action == "PASS":
         exclude = set(cfg.pass_exclude_ids) | {my_player_id}
-        teammates = [p for p in players if p.get("teamId") == team_id and p.get("playerId") not in exclude]
+        teammates = [p for p in players if _is_my_team(p, team_id) and _player_idx(p) not in exclude]
         if teammates:
             target = min(teammates, key=lambda p: dist(p.get("position", {}), pos))
             return [_cmd("PASS", my_player_id, team_id,
-                         {"target_player_id": target.get("playerId", 2), "type": "GROUND"})]
+                         {"target_player_id": _player_idx(target), "type": "GROUND"})]
         return [_cmd("PASS", my_player_id, team_id,
                      {"target_player_id": 2, "type": "GROUND"})]
 
@@ -226,11 +226,11 @@ def _on_ball(cfg, game_state, players, team_id, my_player_id, pos, my_goal_x, op
         if abs(pos.get("x", 0) - opp_goal_x) < cfg.shoot_threshold:
             return [_cmd("SHOOT", my_player_id, team_id,
                          {"aim_location": cfg.shoot_aim, "power": cfg.shoot_power})]
-        forwards = [p for p in players if p.get("teamId") == team_id and p.get("playerId") in (3, 4)]
+        forwards = [p for p in players if _is_my_team(p, team_id) and _player_idx(p) in (3, 4)]
         if forwards:
             target = min(forwards, key=lambda p: abs(p.get("position", {}).get("x", 0) - opp_goal_x))
             return [_cmd("PASS", my_player_id, team_id,
-                         {"target_player_id": target.get("playerId", 3), "type": "GROUND"})]
+                         {"target_player_id": _player_idx(target), "type": "GROUND"})]
         return [_cmd("PASS", my_player_id, team_id,
                      {"target_player_id": 3, "type": "GROUND"})]
 

@@ -40,7 +40,7 @@ def test_fallback_with_ball():
     """Test fallback when GK has the ball — should GK_DISTRIBUTE."""
     print(f"=== FALLBACK WITH BALL ({POSITION_LABEL}) ===")
     state = json.loads(json.dumps(GAME_STATE))
-    state["ball"]["possessionPlayerId"] = MY_PLAYER_ID
+    state["ball"]["possessionAgentId"] = f"agentId_{MY_PLAYER_ID}"
     cmds = fallback_commands(state, TEAM_ID, MY_PLAYER_ID)
     for c in cmds:
         print(f"  P{c['playerId']}: {c['commandType']} {c.get('parameters', {})}")

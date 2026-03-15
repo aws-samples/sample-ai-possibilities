@@ -40,7 +40,7 @@ def test_fallback_with_ball():
     """Test fallback when DEF has the ball — should PASS to nearest non-GK teammate."""
     print(f"=== FALLBACK WITH BALL ({POSITION_LABEL}) ===")
     state = json.loads(json.dumps(GAME_STATE))
-    state["ball"]["possessionPlayerId"] = MY_PLAYER_ID
+    state["ball"]["possessionAgentId"] = f"agentId_{MY_PLAYER_ID}"
     cmds = fallback_commands(state, TEAM_ID, MY_PLAYER_ID)
     for c in cmds:
         print(f"  P{c['playerId']}: {c['commandType']} {c.get('parameters', {})}")
@@ -55,7 +55,7 @@ def test_fallback_opponent_near_goal():
     """Test that DEF marks opponent close to our goal."""
     print(f"=== FALLBACK OPPONENT NEAR GOAL ({POSITION_LABEL}) ===")
     state = json.loads(json.dumps(GAME_STATE))
-    state["ball"]["possessionPlayerId"] = None
+    state["ball"]["possessionAgentId"] = None
     state["players"][6]["position"] = {"x": -40, "y": 5}  # opp P1 near our goal
     cmds = fallback_commands(state, TEAM_ID, MY_PLAYER_ID)
     for c in cmds:
