@@ -26,7 +26,7 @@ agents:
         idle_runtime_session_timeout: null
         max_lifetime: null
     memory:
-      mode: STM_ONLY
+      mode: NO_MEMORY
     identity:
       credential_providers: []
       workload: null

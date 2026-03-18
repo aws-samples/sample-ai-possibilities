@@ -265,31 +265,33 @@ for agent in "${AGENTS[@]}"; do
   echo ""
 done
 
-# ------ Attach gateway invocation permissions to execution role ------
-echo "Attaching AgentCore Gateway permissions to execution role..."
+# ------ Attach gateway invocation permissions to execution roles ------
+echo "Attaching AgentCore Gateway permissions to execution roles..."
 set +e
-EXEC_ROLE_NAME=$(aws iam list-roles \
+EXEC_ROLES=$(aws iam list-roles \
   --query "Roles[?starts_with(RoleName, 'AmazonBedrockAgentCoreSDKRuntime-${AWS_DEFAULT_REGION}-')].RoleName" \
-  --output text 2>/dev/null | awk '{print $1}')
+  --output text 2>/dev/null)
 set -e
 
-if [ -n "$EXEC_ROLE_NAME" ]; then
-  aws iam put-role-policy \
-    --role-name "$EXEC_ROLE_NAME" \
-    --policy-name AgentCoreGatewayAccess \
-    --policy-document "{
-      \"Version\": \"2012-10-17\",
-      \"Statement\": [{
-        \"Effect\": \"Allow\",
-        \"Action\": [
-          \"bedrock-agentcore:InvokeGateway\"
-        ],
-        \"Resource\": \"arn:aws:bedrock-agentcore:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:gateway/*\"
-      }]
-    }" 2>/dev/null && echo "  ✅ Gateway permissions attached to: $EXEC_ROLE_NAME" \
-    || echo "  ⚠️  Failed to attach gateway permissions (may already exist)"
+if [ -n "$EXEC_ROLES" ]; then
+  for EXEC_ROLE_NAME in $EXEC_ROLES; do
+    aws iam put-role-policy \
+      --role-name "$EXEC_ROLE_NAME" \
+      --policy-name AgentCoreGatewayAccess \
+      --policy-document "{
+        \"Version\": \"2012-10-17\",
+        \"Statement\": [{
+          \"Effect\": \"Allow\",
+          \"Action\": [
+            \"bedrock-agentcore:InvokeGateway\"
+          ],
+          \"Resource\": \"arn:aws:bedrock-agentcore:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:gateway/*\"
+        }]
+      }" 2>/dev/null && echo "  ✅ Gateway permissions attached to: $EXEC_ROLE_NAME" \
+      || echo "  ⚠️  Failed to attach gateway permissions to: $EXEC_ROLE_NAME"
+  done
 else
-  echo "  ⚠️  Could not find execution role — attach AgentCoreGatewayAccess policy manually"
+  echo "  ⚠️  Could not find execution roles — attach AgentCoreGatewayAccess policy manually"
 fi
 echo ""
 
