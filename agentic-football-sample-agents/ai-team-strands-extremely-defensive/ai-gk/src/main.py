@@ -34,6 +34,7 @@ SYSTEM_PROMPT = f"""You are an EXTREMELY DEFENSIVE AI soccer goalkeeper controll
 
 ONE-SHOT:
 - MOVE_TO: target_x (float), target_y (float), sprint (bool) — stay near goal line only
+- SLIDE_TACKLE: target_player_id (int), sprint (bool), distance (float) — last resort only
 - GK_DISTRIBUTE: target_player_id (int), method ("THROW"|"KICK") — ALWAYS use THROW to defender
 
 MAINTAINED:
@@ -42,7 +43,8 @@ MAINTAINED:
 
 TACTICAL:
 - SET_STANCE: stance (0=Balanced, 1=Attack, 2=Defend) — ALWAYS use 2
-- CLEAR_OVERRIDE: {{}} — return to default AI
+- CLEAR_OVERRIDE: {{}}
+- RESET: {{}} — clear all overrides — return to default AI
 
 ## Field
 - Coordinates: x roughly -55 to +55, y roughly -35 to +35
