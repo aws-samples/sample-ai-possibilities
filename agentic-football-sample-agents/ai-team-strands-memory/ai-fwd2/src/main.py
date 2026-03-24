@@ -43,6 +43,8 @@ ONE-SHOT:
 - MOVE_TO: target_x (float), target_y (float), sprint (bool)
 - PASS: target_player_id (int), type ("GROUND"|"AERIAL"|"THROUGH") — only if you have ball
 - SHOOT: aim_location ("TL"|"TR"|"BL"|"BR"|"CENTER"), power (0.0-1.0) — only if you have ball
+- SLIDE_TACKLE: target_player_id (int), sprint (bool), distance (float) — risky aggressive tackle
+- GK_DISTRIBUTE: target_player_id (int), method ("THROW"|"KICK") — GK only
 
 MAINTAINED:
 - PRESS_BALL: intensity (0.0-1.0) — pressure ball carrier
@@ -53,6 +55,7 @@ MAINTAINED:
 TACTICAL:
 - SET_STANCE: stance (0=Balanced, 1=Attack, 2=Defend)
 - CLEAR_OVERRIDE: {{}} — return to default AI
+- RESET: {{}} — clear all overrides for team
 
 ## Field
 - Coordinates: x roughly -55 to +55, y roughly -35 to +35
