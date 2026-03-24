@@ -114,7 +114,7 @@ else
 
     TMPDIR=$(mktemp -d)
     cp "$TOOL_FILE" "$TMPDIR/lambda_function.py"
-    sed -i 's/^def handler(/def lambda_handler(/' "$TMPDIR/lambda_function.py"
+    sed -i'' -e 's/^def handler(/def lambda_handler(/' "$TMPDIR/lambda_function.py"
     (cd "$TMPDIR" && zip -q function.zip lambda_function.py)
 
     if [ $FUNC_EXISTS -ne 0 ]; then

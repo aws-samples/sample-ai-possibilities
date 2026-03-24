@@ -37,17 +37,21 @@ def create_gateway_invoke_handler(
             game_state = prompt_data.get("gameState", {})
             team_id = prompt_data.get("teamId", 0)
 
+            # Honor myPlayers from payload if present, otherwise use configured player ID
+            my_players = prompt_data.get("myPlayers", [my_player_id])
+            effective_pid = my_players[0] if my_players else my_player_id
+
             state_summary = summarize_state(
-                game_state, team_id, my_player_id, position_label
+                game_state, team_id, effective_pid, position_label
             )
-            log.info(f"{position_label} gateway agent invoked for team {team_id}")
+            log.info(f"{position_label} gateway agent invoked for team {team_id}, controlling player {effective_pid}")
 
             # Use MCP client context so Gateway tools are available
             with mcp_client:
                 response = agent(state_summary)
             response_text = str(response)
 
-            commands = parse_commands(response_text, team_id, my_player_id)
+            commands = parse_commands(response_text, team_id, effective_pid)
 
             if commands:
                 log.info(f"LLM+tools returned {len(commands)} commands: "
@@ -55,7 +59,7 @@ def create_gateway_invoke_handler(
                 yield json.dumps(commands)
             else:
                 log.warn(f"LLM parse failed, using fallback. Response: {response_text[:200]}")
-                commands = fallback_fn(game_state, team_id, my_player_id)
+                commands = fallback_fn(game_state, team_id, effective_pid)
                 yield json.dumps(commands)
 
         except Exception as e:
@@ -63,8 +67,10 @@ def create_gateway_invoke_handler(
             try:
                 prompt_data = json.loads(payload.get("prompt", "{}"))
                 team_id = prompt_data.get("teamId", 0)
+                my_players = prompt_data.get("myPlayers", [my_player_id])
+                effective_pid = my_players[0] if my_players else my_player_id
                 commands = fallback_fn(
-                    prompt_data.get("gameState", {}), team_id, my_player_id,
+                    prompt_data.get("gameState", {}), team_id, effective_pid,
                 )
                 yield json.dumps(commands)
             except Exception:
