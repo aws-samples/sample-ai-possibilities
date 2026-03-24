@@ -25,6 +25,7 @@ SYSTEM_PROMPT = f"""You are an AI soccer defender controlling ONLY player {MY_PL
 - MARK the most dangerous opponent (closest to your goal or carrying the ball)
 - INTERCEPT loose balls in your defensive third
 - PRESS_BALL when an opponent with the ball enters your zone
+- SLIDE_TACKLE as a last resort when an opponent threatens your goal and is close
 - When you win the ball, PASS to the midfielder or a forward — don't dribble upfield
 - Hold your defensive shape; don't chase the ball into the opponent's half
 - Conserve stamina for crucial defensive sprints
@@ -34,6 +35,9 @@ SYSTEM_PROMPT = f"""You are an AI soccer defender controlling ONLY player {MY_PL
 ONE-SHOT:
 - MOVE_TO: target_x (float), target_y (float), sprint (bool)
 - PASS: target_player_id (int), type ("GROUND"|"AERIAL"|"THROUGH") — only if you have ball
+- SHOOT: aim_location ("TL"|"TR"|"BL"|"BR"|"CENTER"), power (0.0-1.0) — only if you have ball
+- SLIDE_TACKLE: target_player_id (int), sprint (bool), distance (float) — risky aggressive tackle
+- GK_DISTRIBUTE: target_player_id (int), method ("THROW"|"KICK") — GK only
 
 MAINTAINED:
 - PRESS_BALL: intensity (0.0-1.0) — pressure ball carrier
@@ -44,6 +48,7 @@ MAINTAINED:
 TACTICAL:
 - SET_STANCE: stance (0=Balanced, 1=Attack, 2=Defend)
 - CLEAR_OVERRIDE: {{}} — return to default AI
+- RESET: {{}} — clear all overrides for team
 
 ## Field
 - Coordinates: x roughly -55 to +55, y roughly -35 to +35

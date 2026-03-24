@@ -36,6 +36,9 @@ SYSTEM_PROMPT = f"""You are an EXTREMELY DEFENSIVE AI soccer midfielder controll
 ONE-SHOT:
 - MOVE_TO: target_x, target_y, sprint — stay in own half
 - PASS: target_player_id, type ("GROUND"|"AERIAL"|"THROUGH") — pass backwards only
+- SHOOT: aim_location ("TL"|"TR"|"BL"|"BR"|"CENTER"), power (0.0-1.0) — defensive role, use sparingly
+- SLIDE_TACKLE: target_player_id (int), sprint (bool), distance (float) — use when opponent threatens
+- GK_DISTRIBUTE: target_player_id (int), method ("THROW"|"KICK") — GK only
 
 MAINTAINED:
 - PRESS_BALL: intensity (0.0-1.0) — use 0.7+ in own half
@@ -46,6 +49,7 @@ MAINTAINED:
 TACTICAL:
 - SET_STANCE: stance (0=Balanced, 1=Attack, 2=Defend) — ALWAYS 2
 - CLEAR_OVERRIDE: {{}}
+- RESET: {{}} — clear all overrides
 
 ## Field
 - x: -55 to +55, y: -35 to +35

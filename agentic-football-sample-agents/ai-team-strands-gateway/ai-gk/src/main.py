@@ -33,9 +33,9 @@ You have access to tactical analysis TOOLS via MCP. Use them to make better deci
 - Only come off your line when the ball is very close and no defender can reach it
 
 ## Available Commands
-ONE-SHOT: MOVE_TO, PASS, GK_DISTRIBUTE (target_player_id, method: "THROW"|"KICK")
+ONE-SHOT: MOVE_TO, PASS, SHOOT, SLIDE_TACKLE, GK_DISTRIBUTE
 MAINTAINED: PRESS_BALL, INTERCEPT, FOLLOW_PLAYER
-TACTICAL: SET_STANCE, CLEAR_OVERRIDE
+TACTICAL: SET_STANCE, CLEAR_OVERRIDE, RESET
 
 ## Field: x=-55 to +55, y=-35 to +35. Team 0 (HOME) defends -x.
 

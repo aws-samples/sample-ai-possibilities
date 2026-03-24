@@ -34,9 +34,9 @@ You have access to tactical analysis TOOLS via MCP. Use them to make better deci
 - Hold your defensive shape — don't chase into the opponent's half
 
 ## Available Commands
-ONE-SHOT: MOVE_TO, PASS (target_player_id, type: "GROUND"|"AERIAL"|"THROUGH")
-MAINTAINED: PRESS_BALL, MARK (target_player_id, tightness), INTERCEPT, FOLLOW_PLAYER
-TACTICAL: SET_STANCE, CLEAR_OVERRIDE
+ONE-SHOT: MOVE_TO, PASS, SHOOT, SLIDE_TACKLE, GK_DISTRIBUTE
+MAINTAINED: PRESS_BALL, MARK, INTERCEPT, FOLLOW_PLAYER
+TACTICAL: SET_STANCE, CLEAR_OVERRIDE, RESET
 
 ## Field: x=-55 to +55, y=-35 to +35. Team 0 (HOME) defends -x.
 

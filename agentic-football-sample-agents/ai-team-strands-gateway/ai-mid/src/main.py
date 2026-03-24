@@ -35,9 +35,9 @@ You have access to tactical analysis TOOLS via MCP. Use them to make better deci
 - Balance attack and defense — manage stamina carefully
 
 ## Available Commands
-ONE-SHOT: MOVE_TO, PASS, SHOOT (aim_location, power)
+ONE-SHOT: MOVE_TO, PASS, SHOOT, SLIDE_TACKLE, GK_DISTRIBUTE
 MAINTAINED: PRESS_BALL, MARK, INTERCEPT, FOLLOW_PLAYER
-TACTICAL: SET_STANCE, CLEAR_OVERRIDE
+TACTICAL: SET_STANCE, CLEAR_OVERRIDE, RESET
 
 ## Field: x=-55 to +55, y=-35 to +35. Team 0 (HOME) defends -x.
 
