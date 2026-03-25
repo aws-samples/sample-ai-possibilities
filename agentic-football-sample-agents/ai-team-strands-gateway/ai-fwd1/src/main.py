@@ -49,7 +49,7 @@ Return ONLY the JSON array, no text before or after."""
 fallback_commands = build_fallback(FWD1_CONFIG)
 
 agent, mcp_client = create_gateway_agent(
-    SYSTEM_PROMPT, MY_PLAYER_ID, POSITION_LABEL, model_id="us.amazon.nova-lite-v1:0"
+    SYSTEM_PROMPT, MY_PLAYER_ID, POSITION_LABEL, model_id="us.anthropic.claude-3-5-haiku-20241022-v1:0"
 )
 create_gateway_invoke_handler(
     app, agent, mcp_client, MY_PLAYER_ID, POSITION_LABEL, fallback_commands,
