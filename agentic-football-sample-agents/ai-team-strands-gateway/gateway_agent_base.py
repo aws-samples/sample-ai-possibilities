@@ -49,7 +49,11 @@ def create_gateway_agent(
       when invoking the agent so tools remain available.
     """
     mcp_client = MCPClient(_create_gateway_transport)
-    model = BedrockModel(model_id=model_id)
+    model = BedrockModel(
+        model_id=model_id,
+        temperature=0,
+        max_tokens=5000,
+    )
 
     # Fetch tool definitions inside the context so the connection is active.
     with mcp_client:
