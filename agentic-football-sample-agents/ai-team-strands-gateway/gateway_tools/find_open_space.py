@@ -1,81 +1,75 @@
 """Gateway Tool: find_open_space
 
-Accepts game_state + team_id + zone from the MCP schema,
-extracts opponent positions, and finds the best open space.
+Finds the best open space on the field for a player to move to,
+based on opponent positions and the target zone (attack/midfield/defense).
+
+Uses a grid sampling approach to find the point farthest from all opponents
+within the desired zone.
+
+Deployed as a Lambda behind AgentCore Gateway.
 """
 
 import json
 import math
 
 
-def _distance(x1, y1, x2, y2):
+def _distance(x1: float, y1: float, x2: float, y2: float) -> float:
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
-def _min_opp_dist(x, y, opponents):
+def _min_opponent_distance(x: float, y: float, opponents: list[dict]) -> float:
     if not opponents:
         return 999.0
     return min(_distance(x, y, o["x"], o["y"]) for o in opponents)
 
 
-def _player_idx(p):
-    if "agentId" in p:
-        try:
-            return int(p["agentId"].rsplit("_", 1)[-1])
-        except (ValueError, IndexError):
-            return 0
-    return p.get("playerId", 0)
-
-
-def _is_team(p, team_id):
-    if "teamCode" in p:
-        return p["teamCode"] == ("home" if team_id == 0 else "away")
-    return p.get("teamId") == team_id
-
-
 def lambda_handler(event, context):
+    """Lambda handler — input: opponents, zone preference, team side."""
     body = json.loads(event.get("body", "{}")) if isinstance(event.get("body"), str) else event
 
-    game_state = body.get("game_state", body)
-    team_id = body.get("team_id", 0)
-    player_id = body.get("player_id", 0)
-    zone = body.get("zone", "attack")
+    opponents = body["opponent_positions"]
+    zone = body.get("zone", "attack")  # "attack", "midfield", "defense"
+    team_side = body.get("team_side", "HOME")  # HOME defends -x, AWAY defends +x
+    my_position = body.get("my_position", {"x": 0, "y": 0})
 
-    players = game_state.get("players", [])
-    me = next((p for p in players if _player_idx(p) == player_id and _is_team(p, team_id)), None)
-    my_position = me["position"] if me else {"x": 0, "y": 0}
-
-    opp_positions = [p["position"] for p in players if not _is_team(p, team_id)]
-    team_side = "HOME" if team_id == 0 else "AWAY"
-
+    # Define zone x-ranges based on team side
     if team_side == "HOME":
         zones = {"defense": (-55, -15), "midfield": (-15, 15), "attack": (15, 52)}
     else:
         zones = {"defense": (15, 55), "midfield": (-15, 15), "attack": (-52, -15)}
 
     x_min, x_max = zones.get(zone, zones["midfield"])
+    y_min, y_max = -30, 30
+
+    # Sample grid points and find the one with max distance from opponents
     best_point = None
     best_score = -1
+
     step = 5
     x = x_min
     while x <= x_max:
-        y = -30
-        while y <= 30:
-            min_d = _min_opp_dist(x, y, opp_positions)
+        y = y_min
+        while y <= y_max:
+            min_opp_dist = _min_opponent_distance(x, y, opponents)
+            # Penalize points too far from current position (prefer reachable space)
             my_dist = _distance(x, y, my_position["x"], my_position["y"])
-            score = min_d - (my_dist * 0.15)
+            score = min_opp_dist - (my_dist * 0.15)
+
             if score > best_score:
                 best_score = score
                 best_point = {"x": round(x, 1), "y": round(y, 1)}
             y += step
         x += step
 
-    min_opp = round(_min_opp_dist(best_point["x"], best_point["y"], opp_positions), 1)
+    min_opp = round(_min_opponent_distance(best_point["x"], best_point["y"], opponents), 1)
     my_dist = round(_distance(best_point["x"], best_point["y"], my_position["x"], my_position["y"]), 1)
 
-    return {"statusCode": 200, "body": json.dumps({
-        "recommended_position": best_point,
-        "nearest_opponent_distance": min_opp,
-        "distance_from_current": my_dist,
-        "zone": zone,
-    })}
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "recommended_position": best_point,
+            "nearest_opponent_distance": min_opp,
+            "distance_from_current": my_dist,
+            "zone": zone,
+        }),
+    }
