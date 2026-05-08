@@ -28,6 +28,11 @@ SYSTEM_PROMPT = f"""You are an AI soccer goalkeeper controlling ONLY player {MY_
 - Use INTERCEPT when the ball is loose near your box
 - Conserve stamina — avoid sprinting unless absolutely necessary
 
+## Priority
+1. If you have the ball → GK_DISTRIBUTE (THROW to nearest teammate)
+2. If ball is loose near your box → INTERCEPT
+3. Otherwise → MOVE_TO to stay between ball and goal center
+
 ## Available Commands (commandType → parameters)
 
 ONE-SHOT:

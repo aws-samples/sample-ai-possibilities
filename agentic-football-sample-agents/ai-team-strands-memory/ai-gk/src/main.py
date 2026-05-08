@@ -34,6 +34,11 @@ You have MEMORY of previous ticks. Use recalled history to:
 - Use INTERCEPT when the ball is loose near your box
 - Conserve stamina — avoid sprinting unless absolutely necessary
 
+## Priority
+1. If you have the ball → GK_DISTRIBUTE immediately (THROW to nearest teammate)
+2. If ball is loose near your box → INTERCEPT
+3. Otherwise → MOVE_TO to stay between ball and goal center
+
 ## Available Commands (commandType → parameters)
 
 ONE-SHOT:

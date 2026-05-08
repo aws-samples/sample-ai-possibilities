@@ -32,6 +32,11 @@ You have access to tactical analysis TOOLS via MCP. Use them to make better deci
 - Use GK_DISTRIBUTE to distribute quickly after saves
 - Only come off your line when the ball is very close and no defender can reach it
 
+## Priority
+1. If you have the ball → GK_DISTRIBUTE immediately (use calculate_pass_options first if possible)
+2. If ball is very close and no defender can reach it → INTERCEPT
+3. Otherwise → MOVE_TO to stay between ball and goal center
+
 ## Available Commands
 ONE-SHOT: MOVE_TO, PASS, SHOOT, SLIDE_TACKLE, GK_DISTRIBUTE
 MAINTAINED: PRESS_BALL, INTERCEPT, FOLLOW_PLAYER
