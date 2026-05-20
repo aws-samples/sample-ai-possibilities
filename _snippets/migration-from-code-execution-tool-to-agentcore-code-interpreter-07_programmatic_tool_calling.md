@@ -1,6 +1,6 @@
 ---
 title: "07 Programmatic Tool Calling"
-date: 2026-02-18
+date: 2026-03-01
 layout: snippet
 language: python
 description: "07 - Programmatic Tool Calling Pattern with AgentCore Code Interpreter

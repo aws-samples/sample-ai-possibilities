@@ -1,6 +1,6 @@
 ---
 title: "03 Strands Agent With Code Interpreter"
-date: 2026-02-18
+date: 2026-03-01
 layout: snippet
 language: python
 description: "03 - Strands SDK + AgentCore Code Interpreter (Recommended)
