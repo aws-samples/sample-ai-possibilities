@@ -15,8 +15,13 @@
     Override auto-setup by pre-setting GATEWAY_URL.
 
 .EXAMPLE
-    .\deploy-all-newcli.ps1
+    .\deploy-all.ps1
+    .\deploy-all.ps1 -AgentName ai-gk
 #>
+
+param(
+    [string]$AgentName
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -33,6 +38,13 @@ $LAMBDA_ROLE_NAME = "afwc-gateway-tool-lambda-role"
 $GW_ROLE_NAME = "AfwcGatewayExecutionRole"
 
 $allAgents = @("ai-gk", "ai-def", "ai-mid", "ai-fwd1", "ai-fwd2")
+if ($AgentName) {
+    if ($allAgents -notcontains $AgentName) {
+        Write-Host "ERROR: Unknown agent '$AgentName'. Valid: $($allAgents -join ', ')" -ForegroundColor Red
+        exit 1
+    }
+    $allAgents = @($AgentName)
+}
 $TOOLS = @("calculate_pass_options", "evaluate_shot", "find_open_space", "get_defensive_assignment")
 
 Write-Host ""

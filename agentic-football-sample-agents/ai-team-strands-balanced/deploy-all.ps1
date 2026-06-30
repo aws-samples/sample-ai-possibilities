@@ -14,7 +14,12 @@
 
 .EXAMPLE
     .\deploy-all-newcli.ps1
+    .\deploy-all.ps1 -AgentName ai-gk
 #>
+
+param(
+    [string]$AgentName
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -26,6 +31,13 @@ if (-not $env:AWS_DEFAULT_REGION) {
 }
 
 $allAgents = @("ai-gk", "ai-def", "ai-mid", "ai-fwd1", "ai-fwd2")
+if ($AgentName) {
+    if ($allAgents -notcontains $AgentName) {
+        Write-Host "ERROR: Unknown agent '$AgentName'. Valid: $($allAgents -join ', ')" -ForegroundColor Red
+        exit 1
+    }
+    $allAgents = @($AgentName)
+}
 
 Write-Host ""
 Write-Host "=========================================="
