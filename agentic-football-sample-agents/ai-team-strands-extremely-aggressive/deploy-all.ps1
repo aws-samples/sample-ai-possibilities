@@ -58,8 +58,8 @@ Write-Host "  AWS Region:  $($env:AWS_DEFAULT_REGION)" -ForegroundColor Green
 
 # Check CDK bootstrap
 $ErrorActionPreference = "Continue"
-$null = aws cloudformation describe-stacks --stack-name CDKToolkit --query "Stacks[0].StackStatus" --output text 2>$null
-if ($LASTEXITCODE -ne 0) {
+$bootstrapVersion = aws ssm get-parameter --name "/cdk-bootstrap/hnb659fds/version" --query "Parameter.Value" --output text 2>$null
+if ($LASTEXITCODE -ne 0 -or -not $bootstrapVersion) {
     Write-Host "  CDK bootstrap: Running..." -ForegroundColor Yellow
     $ErrorActionPreference = "Stop"
     cdk bootstrap "aws://$awsAccountId/$($env:AWS_DEFAULT_REGION)"
