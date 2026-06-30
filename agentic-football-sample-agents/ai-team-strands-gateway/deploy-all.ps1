@@ -307,10 +307,12 @@ foreach ($agent in $allAgents) {
     $appDir = Join-Path $BuildDir "app\$agentNameClean"
     New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 
-    # Copy main.py
-    Copy-Item "$ScriptDir\$agent\src\main.py" "$appDir\main.py"
+    # Copy main.py into src/ subdirectory (preserves ../lib relative path)
+    $srcDir = Join-Path $appDir "src"
+    New-Item -ItemType Directory -Path $srcDir -Force | Out-Null
+    Copy-Item "$ScriptDir\$agent\src\main.py" "$srcDir\main.py"
 
-    # Copy shared lib
+    # Copy shared lib (at same level as src/ so ../lib works)
     $libSource = Join-Path $ScriptDir "..\lib"
     if (Test-Path $libSource) {
         $libDest = Join-Path $appDir "lib"
@@ -353,7 +355,7 @@ $runtimes = $allAgents | ForEach-Object {
     {
       "name": "$name",
       "build": "CodeZip",
-      "entrypoint": "main.py",
+      "entrypoint": "src/main.py",
       "codeLocation": "app/$name/",
       "runtimeVersion": "PYTHON_3_12",
       "networkMode": "PUBLIC",
