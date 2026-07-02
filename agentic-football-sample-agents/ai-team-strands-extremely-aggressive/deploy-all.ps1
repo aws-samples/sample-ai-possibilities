@@ -68,11 +68,17 @@ if (-not $awsAccountId) { Write-Host "  ERROR: No valid AWS credentials." -Foreg
 Write-Host "  AWS Account: $awsAccountId" -ForegroundColor Green
 Write-Host "  AWS Region:  $($env:AWS_DEFAULT_REGION)" -ForegroundColor Green
 
-# Check CDK bootstrap
+# Check CDK bootstrap — CDKToolkit stack must be pre-provisioned by Workshop Studio
 $ErrorActionPreference = "Continue"
-$bootstrapVersion = aws ssm get-parameter --name "/cdk-bootstrap/hnb659fds/version" --query "Parameter.Value" --output text 2>$null
-if ($LASTEXITCODE -ne 0 -or -not $bootstrapVersion) {
-    Write-Host "  CDK bootstrap: Running..." -ForegroundColor Yellow
+$cdkToolkitStatus = aws cloudformation describe-stacks --stack-name CDKToolkit --query "Stacks[0].StackStatus" --output text 2>$null
+if ($LASTEXITCODE -ne 0 -or -not $cdkToolkitStatus -or $cdkToolkitStatus -notin @("CREATE_COMPLETE","UPDATE_COMPLETE")) {
+    Write-Host "  CDK bootstrap: Not found or not ready (status: $cdkToolkitStatus)" -ForegroundColor Yellow
+    Write-Host "  Attempting cdk bootstrap..." -ForegroundColor Yellow
+    # Clean up broken stack if exists
+    if ($cdkToolkitStatus -and $cdkToolkitStatus -notin @("CREATE_COMPLETE","UPDATE_COMPLETE")) {
+        aws cloudformation delete-stack --stack-name CDKToolkit --region $env:AWS_DEFAULT_REGION 2>$null
+        aws cloudformation wait stack-delete-complete --stack-name CDKToolkit --region $env:AWS_DEFAULT_REGION 2>$null
+    }
     $ErrorActionPreference = "Stop"
     cdk bootstrap "aws://$awsAccountId/$($env:AWS_DEFAULT_REGION)"
 }
@@ -92,14 +98,18 @@ Write-Host ""
 # ============================================================
 Write-Host "Setting up deployment project..."
 
-if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
+if (Test-Path $BuildDir) { cmd /c "rmdir /s /q `"$BuildDir`"" 2>$null; Remove-Item -Recurse -Force $BuildDir -ErrorAction SilentlyContinue }
 
 # Use agentcore create to scaffold the CDK project
 $projectName = "aiteamaggressive"
 Push-Location (Split-Path $BuildDir -Parent)
 $buildDirName = Split-Path $BuildDir -Leaf
 $ErrorActionPreference = "Continue"
-& $agentcorePath create --name "agg_gk_agent" --project-name $projectName --defaults --build CodeZip --skip-git --skip-python-setup --output-dir $buildDirName 2>&1 | Out-Null
+Write-Host "  Running: agentcore create --name agg_gk_agent --project-name $projectName --output-dir $buildDirName"
+& $agentcorePath create --name "agg_gk_agent" --project-name $projectName --build CodeZip --framework Strands --model-provider Bedrock --memory none --skip-git --skip-python-setup --output-dir $buildDirName 2>&1 | ForEach-Object { Write-Host "    $_" }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  WARNING: agentcore create exited with code $LASTEXITCODE" -ForegroundColor Yellow
+}
 $ErrorActionPreference = "Stop"
 Pop-Location
 
@@ -113,6 +123,18 @@ if (Test-Path $projectDir) {
 
 # Wait for npm install to finish (agentcore create runs it)
 $cdkDir = Join-Path $BuildDir "agentcore\cdk"
+if (-not (Test-Path $cdkDir)) {
+    Write-Host ""
+    Write-Host "  ERROR: CDK directory not found at: $cdkDir" -ForegroundColor Red
+    Write-Host "  'agentcore create' failed to scaffold the project." -ForegroundColor Red
+    Write-Host "  This usually happens due to long path issues (OneDrive)." -ForegroundColor Red
+    Write-Host "  Try: Copy project to C:\dev\ and run from there." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Build directory contents:" -ForegroundColor Yellow
+    if (Test-Path $BuildDir) { Get-ChildItem $BuildDir -Recurse -Depth 2 | Select-Object FullName }
+    else { Write-Host "    (build directory does not exist)" }
+    exit 1
+}
 if (-not (Test-Path "$cdkDir\node_modules")) {
     Write-Host "  Installing CDK dependencies..."
     Push-Location $cdkDir
@@ -250,6 +272,6 @@ Write-Host ""
 
 # Cleanup
 Write-Host "Cleaning up build directory..."
-if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir -ErrorAction SilentlyContinue }
+if (Test-Path $BuildDir) { cmd /c "rmdir /s /q `"$BuildDir`"" 2>$null; Remove-Item -Recurse -Force $BuildDir -ErrorAction SilentlyContinue }
 
 if ($deployExitCode -ne 0) { exit 1 }
