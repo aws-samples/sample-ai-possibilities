@@ -28,14 +28,25 @@ agents/
     ├── ai-mid/                 # Midfielder  (player 2) — Nova Pro   + Memory
     ├── ai-fwd1/                # Forward 1   (player 3) — Nova Micro + Memory
     ├── ai-fwd2/                # Forward 2   (player 4) — Nova Lite  + Memory
-    ├── deploy-all.sh           # Build + deploy script
+    ├── deploy-all.sh           # Build + deploy script (macOS/Linux)
+    ├── deploy-all-windows.ps1  # Build + deploy script (Windows)
     └── README.md
 ```
 
 ## Prerequisites
 
-- Same as the balanced team (Python 3.10+, AWS CLI, AgentCore CLI)
+- Python 3.10+
+- AWS CLI configured with valid credentials
+- AWS account with Bedrock model access (Nova Micro, Lite, and/or Pro)
 - A Bedrock AgentCore Memory resource (created once via `create_memory.py`)
+
+**macOS/Linux additionally:**
+- AgentCore CLI: `pip install bedrock-agentcore-starter-toolkit`
+- `rsync` (pre-installed on macOS/Linux)
+
+**Windows additionally:**
+- Node.js 18+ with npm
+- AgentCore CLI: `npm install -g @aws/agentcore aws-cdk`
 
 ## Quick Start
 
@@ -49,9 +60,23 @@ python3 create_memory.py
 
 ### 2. Deploy
 
+**macOS / Linux:**
 ```bash
 export MEMORY_ID=<your-memory-id>
 AWS_DEFAULT_REGION=us-east-1 ./deploy-all.sh
+
+# Deploy a single agent
+AWS_DEFAULT_REGION=us-east-1 ./deploy-all.sh ai-gk
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:MEMORY_ID = "<your-memory-id>"
+$env:AWS_DEFAULT_REGION = "us-east-1"
+.\deploy-all-windows.ps1
+
+# Deploy a single agent
+.\deploy-all-windows.ps1 -AgentName ai-gk
 ```
 
 ### 3. Local test

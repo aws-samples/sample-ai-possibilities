@@ -38,7 +38,8 @@ agents/
     ├── gateway_agent_base.py     # Agent factory with MCP client
     ├── gateway_invoke_handler.py # Invoke handler with MCP context
     ├── gateway_tools/            # Lambda handlers for tactical tools
-    ├── deploy-all.sh             # Build + deploy script
+    ├── deploy-all.sh             # Build + deploy script (macOS/Linux)
+    ├── deploy-all-windows.ps1    # Build + deploy script (Windows)
     └── README.md
 ```
 
@@ -57,9 +58,19 @@ but the agent autonomously decides whether and when to call them:
 
 ## Prerequisites
 
-- Same as the balanced team (Python 3.10+, AWS CLI, AgentCore CLI)
+- Python 3.10+
+- AWS CLI configured with valid credentials
+- AWS account with Bedrock model access (Nova Micro, Lite, and/or Pro)
 - `boto3` installed (`pip install boto3`)
 - Valid AWS credentials with permissions for IAM, Lambda, and Bedrock AgentCore
+
+**macOS/Linux additionally:**
+- AgentCore CLI: `pip install bedrock-agentcore-starter-toolkit`
+- `rsync` (pre-installed on macOS/Linux)
+
+**Windows additionally:**
+- Node.js 18+ with npm
+- AgentCore CLI: `npm install -g @aws/agentcore aws-cdk`
 
 ## Deploy
 
@@ -71,6 +82,7 @@ Everything is handled by a single command. The script automatically:
 5. Registers Lambda targets on the gateway
 6. Deploys all 5 agents to AgentCore
 
+**macOS / Linux:**
 ```bash
 AWS_DEFAULT_REGION=us-east-1 ./deploy-all.sh
 ```
@@ -84,6 +96,23 @@ To skip gateway setup (if you already have one):
 ```bash
 export GATEWAY_URL=https://your-gateway-id.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp
 ./deploy-all.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:AWS_DEFAULT_REGION = "us-east-1"
+.\deploy-all-windows.ps1
+```
+
+To deploy a single agent:
+```powershell
+.\deploy-all-windows.ps1 -AgentName ai-gk
+```
+
+To skip gateway setup (if you already have one):
+```powershell
+$env:GATEWAY_URL = "https://your-gateway-id.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
+.\deploy-all-windows.ps1
 ```
 
 ## Local Test
