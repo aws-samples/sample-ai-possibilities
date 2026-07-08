@@ -50,13 +50,11 @@ Write-Host ""
 # ============================================================
 Write-Host "Checking prerequisites..."
 
-$agentcorePath = (Get-Command agentcore -ErrorAction SilentlyContinue | Where-Object { $_.Source -match "npm|Roaming" } | Select-Object -First 1).Source
-if (-not $agentcorePath) {
-    $agentcorePath = "C:\Users\$env:USERNAME\AppData\Roaming\npm\agentcore.cmd"
-    if (-not (Test-Path $agentcorePath)) {
-        Write-Host "  ERROR: AgentCore CLI not found. Install: npm install -g @aws/agentcore" -ForegroundColor Red
-        exit 1
-    }
+$npmPrefix = npm config get prefix
+$agentcorePath = Join-Path $npmPrefix "agentcore.cmd"
+if (-not (Test-Path $agentcorePath)) {
+    Write-Host "  ERROR: AgentCore CLI not found. Install: npm install -g @aws/agentcore" -ForegroundColor Red
+    exit 1
 }
 Write-Host "  agentcore CLI: OK" -ForegroundColor Green
 
@@ -269,6 +267,23 @@ if ($deployExitCode -eq 0) {
 Write-Host "  Account: $awsAccountId"
 Write-Host "  Region:  $($env:AWS_DEFAULT_REGION)"
 Write-Host ""
+
+# List Agent ARNs
+if ($deployExitCode -eq 0) {
+    Write-Host "  Agent ARNs (copy these to the Player Portal):" -ForegroundColor Cyan
+    $ErrorActionPreference = "Continue"
+    $allRuntimes = aws bedrock-agentcore-control list-agent-runtimes --query "agentRuntimes[].{name:agentRuntimeName,arn:agentRuntimeArn}" --output json --region $env:AWS_DEFAULT_REGION 2>$null | ConvertFrom-Json
+    $ErrorActionPreference = "Stop"
+    foreach ($agent in $allAgents) {
+        $agentNameClean = "dfs_" + ($agent -replace 'ai-', '') + "_agent"
+        $match = $allRuntimes | Where-Object { $_.name -eq "aiteamdefensive_$agentNameClean" }
+        if ($match) {
+            $displayName = $agent.ToUpper() -replace 'AI-',''
+            Write-Host "    $($displayName): $($match.arn)" -ForegroundColor White
+        }
+    }
+    Write-Host ""
+}
 
 # Cleanup
 Write-Host "Cleaning up build directory..."
