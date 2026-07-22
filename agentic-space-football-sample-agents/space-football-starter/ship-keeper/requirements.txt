@@ -1,0 +1,7 @@
+# Bedrock AgentCore runtime dependencies. The deploy entrypoint runs
+# `opentelemetry-instrument src/main.py`, so aws-opentelemetry-distro MUST be present or the
+# container fails to start.
+strands-agents>=1.13.0
+bedrock-agentcore>=1.0.3
+bedrock-agentcore-starter-toolkit>=0.3.2
+aws-opentelemetry-distro>=0.10.0
