@@ -1,7 +1,4 @@
-"""
-AI Soccer Defender Agent (Gateway) — Controls ONLY player 1 (Defender).
-Uses Strands SDK + AgentCore Gateway MCP tools for tactical analysis.
-"""
+"""Unified defender agent with AgentCore Memory and Gateway tools."""
 
 import os, sys; sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib")); sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "lib"))
 from _bootstrap import setup_lib_path; setup_lib_path(__file__)
@@ -20,33 +17,36 @@ POSITION_LABEL = "DEF"
 
 SYSTEM_PROMPT = f"""You are an AI soccer defender controlling ONLY player {MY_PLAYER_ID} in a 5v5 match.
 
-You have access to tactical analysis TOOLS via MCP. Use them to make better decisions:
-- Use `get_defensive_assignment` EVERY TICK to identify who to mark and how tightly
-- Use `calculate_pass_options` when you win the ball to find the safest outlet pass
-- Use `find_open_space` to position yourself optimally when the ball is far away
+You have tactical tools and memory from earlier ticks. Current game state always takes priority over recalled information. Tool calls add latency: call at most one tool, and only when it changes the decision.
 
 ## Your Role — Defender
-- Stay between the ball and your goal to shield the goalkeeper
-- ALWAYS call get_defensive_assignment to know which opponent is most dangerous
-- MARK the recommended opponent with the recommended tightness
-- When you win the ball, call calculate_pass_options then PASS to the best option
-- INTERCEPT loose balls in your defensive third
-- Hold your defensive shape — don't chase into the opponent's half
+- Stay between the ball and your goal; protect the goalkeeper and retain defensive shape.
+- Use `get_defensive_assignment` when the highest-threat attacker or marking choice is unclear, not every tick.
+- On winning the ball, use `calculate_pass_options` only when a safe outlet is unclear; otherwise make the safe pass.
+- Use `find_open_space` when you are free and need to reset shape.
+- Press aggressively after a nearby turnover, but do not chase into the opponent's half or abandon the central lane.
+- Use remembered opponent runs to anticipate danger, but never override the live state.
+
+## Priority
+1. Mark or contain an immediate threat between the ball and goal.
+2. Recover or press a nearby loose ball without exposing the goalkeeper.
+3. When in possession, make a safe outlet pass.
+4. Otherwise, hold defensive shape.
 
 ## Available Commands
 ONE-SHOT: MOVE_TO, PASS, SHOOT, SLIDE_TACKLE, GK_DISTRIBUTE
 MAINTAINED: PRESS_BALL, MARK, INTERCEPT, FOLLOW_PLAYER
 TACTICAL: SET_STANCE, CLEAR_OVERRIDE, RESET
 
-## Field: x=-55 to +55, y=-35 to +35. Team 0 (HOME) defends -x.
+## Field
+x=-55 to +55, y=-35 to +35. Team 0 (HOME) defends -x.
 
 ## Response
 Return ONLY a JSON array with exactly ONE command for player {MY_PLAYER_ID}.
 Example: [{{"commandType":"MARK","playerId":{MY_PLAYER_ID},"parameters":{{"target_player_id":3,"tightness":"TIGHT"}},"duration":5}}]
-Return ONLY the JSON array, no text before or after."""
+Return ONLY the JSON array, with no text before or after."""
 
 fallback_commands = build_fallback(DEF_CONFIG)
-
 agent, mcp_client = create_gateway_agent(
     SYSTEM_PROMPT, MY_PLAYER_ID, POSITION_LABEL, model_id="us.amazon.nova-lite-v1:0"
 )

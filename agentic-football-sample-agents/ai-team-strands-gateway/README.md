@@ -1,124 +1,30 @@
-# AI Team (Strands + Gateway) — Per-Position Soccer Agents with MCP Tactical Tools
+# AI Team — Unified Memory and Gateway Agents
 
-Five AI agents that each control a single player in a 5v5 soccer match, built with
-[Strands Agents SDK](https://github.com/strands-agents/sdk-python) and
-[Amazon Bedrock AgentCore Gateway](https://docs.aws.amazon.com/bedrock-agentcore/) for
-MCP-based tactical analysis tools.
+This team combines the tactical tool access from the AgentCore Gateway workshop with the per-role tick history from the AgentCore Memory workshop. It retains the existing `ai-team-strands-gateway` directory so the workshop source is not duplicated, but its templates deploy a distinct set of `*_unified_agent` runtimes.
 
-## What's Different from the Balanced Team?
+## What is included
 
-Each agent connects to an AgentCore Gateway via MCP and can autonomously call
-tactical analysis tools during gameplay. The agent decides which tools to use
-based on its current situation — no forced tool calls.
+- **Five roles:** GK, DEF, MID, FWD1, FWD2.
+- **AgentCore Memory:** each role retains team-scoped history across ticks through the existing `MEMORY_ID` resource.
+- **AgentCore Gateway:** agents call the existing MCP endpoint in `GATEWAY_URL` for pass, space, shot, and defensive analysis.
+- **Tactical changes:** high press remains the baseline after its 1–0 win; agents limit expensive tool calls to decision points; forwards now require a clear evaluated chance before shooting.
+- **Models:** GK and FWD1 use Nova Lite, DEF and FWD2 use Nova Lite, and MID uses Nova Pro for the most complex coordination decisions.
 
-Available MCP tools:
-- `calculate_pass_options` — Pass success probability based on interception risk
-- `find_open_space` — Grid-based open space finder by zone (attack/midfield/defense)
-- `evaluate_shot` — Shot success probability with aim recommendation
-- `get_defensive_assignment` — Opponent threat ranking for marking priority
+The memory implementation is role-scoped because the game payload does not provide a match ID. It should not be used as an authoritative cross-match record. If the game later supplies `matchId`, include it in the memory session ID to isolate history per match.
 
-Key differences from balanced team:
-- `MCPClient` connected to AgentCore Gateway for tool access
-- `gateway_invoke_handler.py` wraps agent calls inside `with mcp_client:` context
-- System prompts guide agents on WHEN to use tools, but agents decide autonomously
-- Gateway uses NONE auth (no token required)
-- Requires `GATEWAY_URL` environment variable (auto-set by deploy-all.sh)
+## Existing resource inputs
 
-## Architecture
+This deployment script deliberately does not create or change a Memory resource, Gateway, or Gateway Lambda tools. Set the identifiers from the workshop deployments:
 
-```
-agents/
-├── lib/                          # Shared library (same as other teams)
-└── ai-team-strands-gateway/
-    ├── ai-gk/                    # Goalkeeper  (player 0) — Nova Micro + Gateway
-    ├── ai-def/                   # Defender    (player 1) — Nova Lite  + Gateway
-    ├── ai-mid/                   # Midfielder  (player 2) — Nova Pro   + Gateway
-    ├── ai-fwd1/                  # Forward 1   (player 3) — Nova Micro + Gateway
-    ├── ai-fwd2/                  # Forward 2   (player 4) — Nova Lite  + Gateway
-    ├── gateway_agent_base.py     # Agent factory with MCP client
-    ├── gateway_invoke_handler.py # Invoke handler with MCP context
-    ├── gateway_tools/            # Lambda handlers for tactical tools
-    ├── deploy-all.sh             # Build + deploy script (macOS/Linux)
-    ├── deploy-all-windows.ps1    # Build + deploy script (Windows)
-    └── README.md
-```
-
-## How Agents Use Tools
-
-Each agent's system prompt suggests which tools are most relevant for their position,
-but the agent autonomously decides whether and when to call them:
-
-| Position | Primary Tools | When |
-|----------|--------------|------|
-| GK | `get_defensive_assignment`, `calculate_pass_options` | Identify threats, distribute after saves |
-| DEF | `get_defensive_assignment`, `calculate_pass_options` | Mark opponents, find outlet passes |
-| MID | `calculate_pass_options`, `find_open_space`, `evaluate_shot` | Distribute, position, decide shoot vs pass |
-| FWD1 | `evaluate_shot`, `calculate_pass_options`, `find_open_space` | Shoot decisions, passing under pressure |
-| FWD2 | `evaluate_shot`, `calculate_pass_options`, `find_open_space` | Shoot decisions, attacking runs |
-
-## Prerequisites
-
-- Python 3.10+
-- AWS CLI configured with valid credentials
-- AWS account with Bedrock model access (Nova Micro, Lite, and/or Pro)
-- `boto3` installed (`pip install boto3`)
-- Valid AWS credentials with permissions for IAM, Lambda, and Bedrock AgentCore
-
-**macOS/Linux additionally:**
-- AgentCore CLI: `pip install bedrock-agentcore-starter-toolkit`
-- `rsync` (pre-installed on macOS/Linux)
-
-**Windows additionally:**
-- Node.js 18+ with npm
-- AgentCore CLI: `npm install -g @aws/agentcore aws-cdk`
-
-## Deploy
-
-Everything is handled by a single command. The script automatically:
-1. Creates Lambda IAM role (reuses if exists)
-2. Deploys 4 Lambda functions for tactical tools
-3. Creates Gateway execution role (reuses if exists)
-4. Creates MCP Gateway with NONE auth via boto3 (reuses if exists)
-5. Registers Lambda targets on the gateway
-6. Deploys all 5 agents to AgentCore
-
-**macOS / Linux:**
 ```bash
-AWS_DEFAULT_REGION=us-east-1 ./deploy-all.sh
+export MEMORY_ID="<existing-agentcore-memory-id>"
+export GATEWAY_URL="https://<existing-gateway-id>.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
+export TEAM_ID="kasia-rook"
 ```
 
-To deploy a single agent:
-```bash
-AWS_DEFAULT_REGION=us-east-1 ./deploy-all.sh ai-gk
-```
+If Gateway authentication is enabled, also set `GATEWAY_ACCESS_TOKEN`. The workshop Gateway is configured for no authentication, so no token is normally needed.
 
-To skip gateway setup (if you already have one):
-```bash
-export GATEWAY_URL=https://your-gateway-id.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp
-./deploy-all.sh
-```
-
-**Windows (PowerShell):**
-```powershell
-$env:AWS_DEFAULT_REGION = "us-east-1"
-.\deploy-all-windows.ps1
-```
-
-To deploy a single agent:
-```powershell
-.\deploy-all-windows.ps1 -AgentName ai-gk
-```
-
-To skip gateway setup (if you already have one):
-```powershell
-$env:GATEWAY_URL = "https://your-gateway-id.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
-.\deploy-all-windows.ps1
-```
-
-## Local Test
-
-Tests verify state summary, command parsing, and fallback logic without
-requiring a deployed Gateway or LLM calls:
+## Validate locally
 
 ```bash
 python3 ai-gk/test_local.py
@@ -127,3 +33,23 @@ python3 ai-mid/test_local.py
 python3 ai-fwd1/test_local.py
 python3 ai-fwd2/test_local.py
 ```
+
+These tests validate state interpretation, command parsing, and deterministic fallbacks without using AWS. Test an actual model separately with the matching role's `test_local.py --llm` once the required environment variables are set.
+
+## Deploy when ready
+
+Deployment creates/updates only the five distinct unified AgentCore runtimes. It reuses the supplied Memory and Gateway resources and scopes the added access policy to those specific resource IDs.
+
+```bash
+AWS_DEFAULT_REGION=us-east-1 ./deploy-all.sh
+```
+
+To deploy one role:
+
+```bash
+AWS_DEFAULT_REGION=us-east-1 ./deploy-all.sh ai-fwd1
+```
+
+## Match reports
+
+Manually supplied reports are stored in `match-reports/`. Keep the raw report details, the verified winner and score, tactical observations, and one next experiment. Do not change multiple tactical variables based on one match.

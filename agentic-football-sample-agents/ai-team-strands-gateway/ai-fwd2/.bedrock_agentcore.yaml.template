@@ -1,7 +1,7 @@
-default_agent: ai_fwd2_gateway_agent
+default_agent: ai_fwd2_unified_agent
 agents:
-  ai_fwd2_gateway_agent:
-    name: ai_fwd2_gateway_agent
+  ai_fwd2_unified_agent:
+    name: ai_fwd2_unified_agent
     entrypoint: src/main.py
     deployment_type: direct_code_deploy
     runtime_type: PYTHON_3_10

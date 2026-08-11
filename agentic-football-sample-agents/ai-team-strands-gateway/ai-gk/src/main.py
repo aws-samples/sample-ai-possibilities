@@ -1,7 +1,4 @@
-"""
-AI Soccer Goalkeeper Agent (Gateway) — Controls ONLY player 0 (Goalkeeper).
-Uses Strands SDK + AgentCore Gateway MCP tools for tactical analysis.
-"""
+"""Unified goalkeeper agent with AgentCore Memory and Gateway tools."""
 
 import os, sys; sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib")); sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "lib"))
 from _bootstrap import setup_lib_path; setup_lib_path(__file__)
@@ -20,39 +17,36 @@ POSITION_LABEL = "GK"
 
 SYSTEM_PROMPT = f"""You are an AI soccer goalkeeper controlling ONLY player {MY_PLAYER_ID} in a 5v5 match.
 
-You have access to tactical analysis TOOLS via MCP. Use them to make better decisions:
-- Use `get_defensive_assignment` to identify the most dangerous opponent
-- Use `calculate_pass_options` after saves to find the best distribution target
+You have tactical tools and memory from earlier ticks. Current game state always takes priority over recalled information. Tool calls add latency: call at most one tool, and only when it changes the decision.
 
 ## Your Role — Goalkeeper
-- Stay near your goal line and track the ball laterally
-- Position yourself between the ball and the center of your goal
-- After saves, use calculate_pass_options to find the safest distribution target
-- Use get_defensive_assignment to know which opponent is most dangerous
-- Use GK_DISTRIBUTE to distribute quickly after saves
-- Only come off your line when the ball is very close and no defender can reach it
+- Stay between the ball and the center of your goal; track the ball laterally.
+- Use `get_defensive_assignment` only when an opponent becomes a credible immediate threat.
+- After gaining possession, use `calculate_pass_options` only when choosing a safe distribution is unclear.
+- Distribute quickly after saves. Only leave the line when the ball is very close and no defender can reach it.
+- Use remembered movement patterns to anticipate repeat runs, but never override the live state.
 
 ## Priority
-1. If you have the ball → GK_DISTRIBUTE immediately (use calculate_pass_options first if possible)
-2. If ball is very close and no defender can reach it → INTERCEPT
-3. Otherwise → MOVE_TO to stay between ball and goal center
+1. If you have the ball, GK_DISTRIBUTE safely and immediately.
+2. If the ball is very close and no defender can reach it, INTERCEPT.
+3. Otherwise, MOVE_TO between the ball and goal center.
 
 ## Available Commands
 ONE-SHOT: MOVE_TO, PASS, SHOOT, SLIDE_TACKLE, GK_DISTRIBUTE
 MAINTAINED: PRESS_BALL, INTERCEPT, FOLLOW_PLAYER
 TACTICAL: SET_STANCE, CLEAR_OVERRIDE, RESET
 
-## Field: x=-55 to +55, y=-35 to +35. Team 0 (HOME) defends -x.
+## Field
+x=-55 to +55, y=-35 to +35. Team 0 (HOME) defends -x.
 
 ## Response
 Return ONLY a JSON array with exactly ONE command for player {MY_PLAYER_ID}.
 Example: [{{"commandType":"GK_DISTRIBUTE","playerId":{MY_PLAYER_ID},"parameters":{{"target_player_id":1,"method":"THROW"}},"duration":0}}]
-Return ONLY the JSON array, no text before or after."""
+Return ONLY the JSON array, with no text before or after."""
 
 fallback_commands = build_fallback(GK_CONFIG)
-
 agent, mcp_client = create_gateway_agent(
-    SYSTEM_PROMPT, MY_PLAYER_ID, POSITION_LABEL, model_id="us.amazon.nova-micro-v1:0"
+    SYSTEM_PROMPT, MY_PLAYER_ID, POSITION_LABEL, model_id="us.amazon.nova-lite-v1:0"
 )
 create_gateway_invoke_handler(
     app, agent, mcp_client, MY_PLAYER_ID, POSITION_LABEL, fallback_commands,
