@@ -69,6 +69,7 @@ def mock_agentcore_memory():
 
     strands_mod.AgentCoreMemorySessionManager = _FakeAgentCoreMemorySessionManager
     config_mod.AgentCoreMemoryConfig = _FakeAgentCoreMemoryConfig
+    session_mod.AgentCoreMemorySessionManager = _FakeAgentCoreMemorySessionManager
 
     sys.modules["bedrock_agentcore.memory"] = mem_mod
     sys.modules["bedrock_agentcore.memory.integrations"] = integ_mod
