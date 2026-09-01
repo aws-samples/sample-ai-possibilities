@@ -3,7 +3,7 @@ fastapi
 uvicorn[standard]
 websockets==11.0.3
 python-multipart
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 strands-agents
 strands-agents-tools
 mcp
