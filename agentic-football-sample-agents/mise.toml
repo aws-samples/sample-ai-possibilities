@@ -1,0 +1,10 @@
+[env]
+_.python.venv = { path = ".venv", create = true, uv_create_args = ["--seed"] }
+
+[tools]
+python = "3.14"
+uv = "0.12.10"
+
+[tasks.setup]
+description = "Install the AgentCore development dependencies into mise's virtualenv"
+run = "uv pip install -r ai-team-strands-balanced/ai-gk/requirements.txt"
