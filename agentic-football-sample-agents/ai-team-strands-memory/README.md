@@ -69,6 +69,12 @@ $env:AWS_DEFAULT_REGION = "us-east-1"
 python deploy_all.py
 ```
 
+On AWS CloudShell, `cdk`, Node.js 20 and the AWS CLI are pre-installed. Install the
+AgentCore CLI outside the 1 GB home directory and keep the package caches in `/tmp`
+(`npm config set cache /tmp/npm-cache`, `export UV_CACHE_DIR=/tmp/uv-cache`,
+`sudo npm install -g @aws/agentcore`). The CLI install lives on the ephemeral root
+filesystem, so re-run it in each new CloudShell session.
+
 The script checks prerequisites, writes the deploy target, bootstraps CDK if
 needed, stages the shared `lib/` and `memory_agent_base_cdk.py` into each agent
 directory, and runs `agentcore deploy --yes`. That single deploy creates the
