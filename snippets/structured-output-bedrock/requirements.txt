@@ -1,0 +1,3 @@
+boto3
+openai
+aws-bedrock-token-generator
