@@ -1,6 +1,6 @@
 ---
 title: "AI Unicorn Wardrobe: AI Agent with Strands SDK and Amazon Nova Canvas Virtual Try On"
-date: 2026-02-18
+date: 2026-10-15
 description: "- **Educational Purpose**: This project demonstrates AI integration patterns and is not production-ready
 - **Model Access**: Ensure your AWS account has access to Claude 3.5 Sonnet and Nova Canvas in your region
 - **Cost Management**: Monitor usage of Bedrock models and S3 storage - implement cost controls for production
@@ -35,6 +35,9 @@ tags:
 ---
 
 # AI Unicorn Wardrobe: AI Agent with Strands SDK and Amazon Nova Canvas Virtual Try On
+
+> [!WARNING]
+> **Legacy demo.** This project is built on Amazon Nova Canvas, which is now a legacy model on Amazon Bedrock. The code is kept here for reference, but new projects should check the [Bedrock model catalog](https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html) for its current replacement before building on it.
 
 A sophisticated AI-powered virtual wardrobe and fashion assistant that combines cutting-edge Amazon Bedrock AI capabilities with an intuitive React interface. Users can build a digital wardrobe, receive personalized outfit recommendations, and visualize complete looks using advanced Amazon Nova Canvas virtual try-on technology.
 

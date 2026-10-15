@@ -1,6 +1,6 @@
 ---
 title: "00 Anthropic Code Execution"
-date: 2026-02-18
+date: 2026-10-15
 layout: snippet
 language: python
 description: "00 - Anthropic Code Execution Tool (BEFORE - Reference)
