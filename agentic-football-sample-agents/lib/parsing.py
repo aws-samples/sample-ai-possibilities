@@ -69,6 +69,14 @@ def _tag_commands(commands: list, team_id: int, my_player_id: int) -> list[dict]
                 if isinstance(params.get("target_y"), (int, float)):
                     params["target_y"] = _clamp(params["target_y"], -35, 35)
             # Ensure PASS/MARK/FOLLOW_PLAYER/GK_DISTRIBUTE/SLIDE_TACKLE have target_player_id
+            # NOTE: the SLIDE_TACKLE default of -1 is not a valid per-team
+            # index, and the MARK/FOLLOW_PLAYER default of 0 is the opposing
+            # goalkeeper, so an untargeted MARK marks the one opponent least
+            # worth marking. Left as-is deliberately: this function has no
+            # game state and so cannot choose a better opponent, and dropping
+            # the command instead would change behaviour in a way that needs
+            # the server's view on what an absent target does. Raised as an
+            # open question rather than guessed at here.
             if cmd["commandType"] in ("PASS", "MARK", "FOLLOW_PLAYER", "GK_DISTRIBUTE", "SLIDE_TACKLE"):
                 params = cmd.get("parameters", {})
                 if params.get("target_player_id") is None:
