@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+uv.lock
+# lib/ copies injected into each car at deploy time by deploy_all.py
+car-*/lib/
+agentcore/.cli/
