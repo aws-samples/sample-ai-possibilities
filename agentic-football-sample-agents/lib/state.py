@@ -19,10 +19,63 @@ def _player_idx(p: dict) -> int:
 
 
 def _is_my_team(p: dict, team_id: int) -> bool:
-    """True if player belongs to team_id — new teamCode or old teamId."""
-    if "teamCode" in p:
-        return p["teamCode"] == ("home" if team_id == 0 else "away")
+    """True if player belongs to team_id — new teamCode or old teamId.
+
+    teamCode is compared case-insensitively: the game server documents the
+    teams as HOME/AWAY while the payload has been observed as home/away, and
+    a case mismatch here is catastrophic rather than cosmetic — every player
+    reads as an opponent, the agent's own player drops out of the prompt
+    entirely, and the fallback degrades to SET_STANCE for the whole match.
+    """
+    code = p.get("teamCode")
+    if isinstance(code, str):
+        return code.strip().lower() == ("home" if team_id == 0 else "away")
     return p.get("teamId") == team_id
+
+
+def _ball_is_free(ball: dict):
+    """True/False from the server's own isFree flag, or None when absent.
+
+    The server supplies isFree alongside possessionAgentId. Inferring
+    looseness from a failed possession lookup instead makes any id we cannot
+    parse look like a loose ball, which tells a player carrying the ball to
+    go and fetch it.
+    """
+    free = ball.get("isFree")
+    return free if isinstance(free, bool) else None
+
+
+def _resolve_holder(ball: dict, players: list):
+    """Return the player dict holding the ball, or None.
+
+    agentId is not unique across teams — the same agentId_N appears once per
+    team — so an id match alone cannot always identify the player. When the
+    id is ambiguous we keep the long-standing behaviour of taking the first
+    match in players[], rather than guessing: a positional tie-break on
+    distance to the ball looks appealing but picks the wrong team whenever
+    possession has just changed and the ball has not yet caught up.
+
+    Ambiguity is therefore no worse than before. What changes is that the
+    team is now checked against the resolved holder (see holder_is_me), so a
+    player can no longer act on a ball the opposing player of the same index
+    is carrying.
+
+    TODO: drop the ambiguity entirely once the server exposes a globally
+    unique player id, or sends a team discriminator alongside possession.
+    """
+    holder_agent = ball.get("possessionAgentId")
+    if isinstance(holder_agent, str):
+        matches = [p for p in players if p.get("agentId") == holder_agent]
+    else:
+        pid = ball.get("possessionPlayerId")
+        if pid is None:
+            return None
+        matches = [p for p in players if p.get("playerId") == pid]
+        team = ball.get("possessionTeamId")
+        if team is not None:
+            matches = [p for p in matches if p.get("teamId") == team]
+
+    return matches[0] if matches else None
 
 
 def _possession_idx(ball: dict):
@@ -45,16 +98,43 @@ def get_goal_positions(team_id: int) -> tuple[float, float]:
 
 
 def get_possession_info(ball: dict, players: list, team_id: int) -> tuple:
-    """Return (possession_id, ball_status_str, we_have_ball)."""
-    possession_id = _possession_idx(ball)
-    if possession_id is not None:
-        holder = next((p for p in players if _player_idx(p) == possession_id), None)
-        if holder:
-            is_mine = _is_my_team(holder, team_id)
-            side = "MY" if is_mine else "OPP"
-            return possession_id, f"{side} player {possession_id}", is_mine
-        return possession_id, "unknown", False
-    return None, "free", False
+    """Return (possession_id, ball_status_str, we_have_ball).
+
+    possession_id is the holder's per-team index, which is NOT on its own
+    enough to identify a player — use holder_is_me() for that rather than
+    comparing it to your own id.
+    """
+    if _ball_is_free(ball) is True:
+        return None, "free", False
+
+    claimed = (
+        isinstance(ball.get("possessionAgentId"), str)
+        or ball.get("possessionPlayerId") is not None
+    )
+    holder = _resolve_holder(ball, players)
+    if holder is None:
+        # A ball with no possession claim is genuinely loose. A claim we
+        # cannot resolve is reported as unknown and never as loose, so a
+        # carrier is not told to go and fetch a ball it already has.
+        return None, ("unknown" if claimed else "free"), False
+
+    is_mine = _is_my_team(holder, team_id)
+    idx = _player_idx(holder)
+    side = "MY" if is_mine else "OPP"
+    return idx, f"{side} player {idx}", is_mine
+
+
+def holder_is_me(ball: dict, players: list, team_id: int, my_player_id: int) -> bool:
+    """True only when this specific player holds the ball.
+
+    Both the index and the team must match. Comparing the possession index
+    alone is true for two players at once — one per team — which lets a
+    player act on a ball an opponent is carrying.
+    """
+    holder = _resolve_holder(ball, players)
+    if holder is None:
+        return False
+    return _player_idx(holder) == my_player_id and _is_my_team(holder, team_id)
 
 
 def dist(pos1: dict, pos2: dict) -> float:
@@ -106,7 +186,7 @@ def summarize_state(
         pos = me.get("position", {})
         stam = me.get("stamina", 100)
         dist_ball = dist(pos, ball_pos)
-        has_ball = possession_id == my_player_id
+        has_ball = holder_is_me(ball, players, team_id, my_player_id)
         extra = f" distOppGoal={abs(pos.get('x', 0) - opp_goal_x):.1f}" if position_label in ("MID", "FWD1", "FWD2") else ""
         lines.append(
             f">>> YOUR PLAYER ({position_label}, id={my_player_id}): "
