@@ -1,0 +1,100 @@
+{
+  "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
+  "name": "TeamStrandsCarsAggressive",
+  "version": 1,
+  "managedBy": "CDK",
+  "tags": {
+    "agentcore:created-by": "agentcore-cli",
+    "agentcore:project-name": "TeamStrandsCarsAggressive"
+  },
+  "runtimes": [
+    {
+      "name": "car_goalkeeper_agent",
+      "build": "CodeZip",
+      "entrypoint": "src/main.py",
+      "codeLocation": "car-goalkeeper/",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "OTEL_METRICS_EXPORTER",
+          "value": "none"
+        }
+      ]
+    },
+    {
+      "name": "car_defender_agent",
+      "build": "CodeZip",
+      "entrypoint": "src/main.py",
+      "codeLocation": "car-defender/",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "OTEL_METRICS_EXPORTER",
+          "value": "none"
+        }
+      ]
+    },
+    {
+      "name": "car_support_agent",
+      "build": "CodeZip",
+      "entrypoint": "src/main.py",
+      "codeLocation": "car-support/",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "OTEL_METRICS_EXPORTER",
+          "value": "none"
+        }
+      ]
+    },
+    {
+      "name": "car_striker_1_agent",
+      "build": "CodeZip",
+      "entrypoint": "src/main.py",
+      "codeLocation": "car-striker-1/",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "OTEL_METRICS_EXPORTER",
+          "value": "none"
+        }
+      ]
+    },
+    {
+      "name": "car_striker_2_agent",
+      "build": "CodeZip",
+      "entrypoint": "src/main.py",
+      "codeLocation": "car-striker-2/",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "OTEL_METRICS_EXPORTER",
+          "value": "none"
+        }
+      ]
+    }
+  ],
+  "memories": [],
+  "knowledgeBases": [],
+  "credentials": [],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [],
+  "policyEngines": [],
+  "configBundles": [],
+  "abTests": [],
+  "harnesses": [],
+  "datasets": [],
+  "capacityProviders": [],
+  "payments": []
+}
