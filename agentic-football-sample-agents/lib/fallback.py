@@ -8,7 +8,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
 
-from state import get_goal_positions, get_possession_info, dist, _player_idx, _is_my_team, _possession_idx
+from state import (
+    get_goal_positions,
+    get_possession_info,
+    holder_is_me,
+    dist,
+    _player_idx,
+    _is_my_team,
+    _possession_idx,
+)
 
 
 @dataclass
@@ -157,7 +165,7 @@ def build_fallback(cfg: FallbackConfig) -> Callable[[dict, int, int], list[dict]
         pos = me.get("position", {"x": 0, "y": 0})
 
         # --- We have the ball ---
-        if possession_id == my_player_id:
+        if holder_is_me(ball, players, team_id, my_player_id):
             return _on_ball(cfg, game_state, players, team_id, my_player_id, pos, my_goal_x, opp_goal_x)
 
         # --- DEF: mark dangerous opponent ---
