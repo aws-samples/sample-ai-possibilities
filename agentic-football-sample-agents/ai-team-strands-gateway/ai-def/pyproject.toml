@@ -6,6 +6,6 @@ dependencies = [
     "strands-agents>=1.45.0",
     "strands-agents-tools>=0.1.0",
     "bedrock-agentcore>=1.17.0",
-    "mcp>=1.9.0",
+    "mcp>=1.9.0,<2",
     "aws-opentelemetry-distro>=0.18.0",
 ]
