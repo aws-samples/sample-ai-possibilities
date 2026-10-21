@@ -10,6 +10,7 @@ from typing import Callable
 from strands import Agent
 from strands.tools.mcp.mcp_client import MCPClient
 
+from agent_base import parse_prompt, team_id_from
 from parsing import parse_commands
 from state import summarize_state
 from fallback import FallbackConfig, build_last_resort
@@ -30,12 +31,12 @@ def create_gateway_invoke_handler(
 
     @app.entrypoint
     async def invoke(payload, context):
+        # Parsed once, outside the try, so the error handler can reuse it
+        # rather than re-parsing and raising a second exception.
+        prompt_data = parse_prompt(payload)
+        team_id = team_id_from(prompt_data, log, position_label)
         try:
-            prompt = payload.get("prompt", "{}")
-            prompt_data = json.loads(prompt) if isinstance(prompt, str) else prompt
-
             game_state = prompt_data.get("gameState", {})
-            team_id = prompt_data.get("teamId", 0)
 
             # Honor myPlayers from payload if present, otherwise use configured player ID
             my_players = prompt_data.get("myPlayers", [my_player_id])
@@ -65,17 +66,19 @@ def create_gateway_invoke_handler(
         except Exception as e:
             log.error(f"{position_label} gateway agent error: {e}")
             try:
-                prompt_data = json.loads(payload.get("prompt", "{}"))
-                team_id = prompt_data.get("teamId", 0)
+                # Reuse the payload parsed at entry — re-parsing an
+                # already-decoded dict raised TypeError here, which the bare
+                # except swallowed, skipping the rule-based fallback.
                 my_players = prompt_data.get("myPlayers", [my_player_id])
                 effective_pid = my_players[0] if my_players else my_player_id
                 commands = fallback_fn(
                     prompt_data.get("gameState", {}), team_id, effective_pid,
                 )
                 yield json.dumps(commands)
-            except Exception:
+            except Exception as fallback_error:
+                log.error(f"{position_label} gateway fallback also failed: {fallback_error}")
                 cmd = dict(last_resort)
-                cmd["teamId"] = 0
+                cmd["teamId"] = team_id
                 yield json.dumps([cmd])
 
     return invoke

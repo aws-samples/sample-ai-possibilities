@@ -16,6 +16,42 @@ def create_agent(system_prompt: str, model_id: str = "us.amazon.nova-micro-v1:0"
     return Agent(model=model, system_prompt=system_prompt)
 
 
+def parse_prompt(payload) -> dict:
+    """Parse the invocation payload's prompt, accepting either str or dict.
+
+    The main path has always accepted both, but the error handler used to
+    re-parse with a bare json.loads(), which raises TypeError on a dict. That
+    exception was caught by the outer bare except, so the rule-based fallback
+    was skipped entirely and control fell through to the last resort.
+    """
+    prompt = payload.get("prompt", "{}")
+    if isinstance(prompt, dict):
+        return prompt
+    try:
+        parsed = json.loads(prompt)
+    except (TypeError, ValueError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def team_id_from(prompt_data: dict, log, label: str) -> int:
+    """teamId from the payload; HOME only as a loudly logged last resort.
+
+    teamId is authoritative input, not a guessable default. Silently
+    defaulting to 0 makes an away agent emit commands tagged HOME, which the
+    server attributes to the opposing team — and leaves nothing in the logs
+    to explain why the away side played as though it were the home side.
+    """
+    team_id = prompt_data.get("teamId")
+    if team_id is None:
+        log.error(
+            f"{label}: payload contained no teamId; falling back to HOME (0). "
+            "Commands this tick may be attributed to the wrong team."
+        )
+        return 0
+    return team_id
+
+
 def create_invoke_handler(
     app,
     agent: Agent,
@@ -36,12 +72,12 @@ def create_invoke_handler(
 
     @app.entrypoint
     async def invoke(payload, context):
+        # Parsed once, outside the try, so the error handler below can reuse
+        # it instead of re-parsing and throwing a second exception.
+        prompt_data = parse_prompt(payload)
+        team_id = team_id_from(prompt_data, log, position_label)
         try:
-            prompt = payload.get("prompt", "{}")
-            prompt_data = json.loads(prompt) if isinstance(prompt, str) else prompt
-
             game_state = prompt_data.get("gameState", {})
-            team_id = prompt_data.get("teamId", 0)
 
             # Honor myPlayers from payload if present, otherwise use configured player ID
             my_players = prompt_data.get("myPlayers", [my_player_id])
@@ -76,8 +112,10 @@ def create_invoke_handler(
         except Exception as e:
             log.error(f"{position_label} agent error: {e}")
             try:
-                prompt_data = json.loads(payload.get("prompt", "{}"))
-                team_id = prompt_data.get("teamId", 0)
+                # Reuse the payload parsed at entry. Re-parsing here is what
+                # broke this path: json.loads() on an already-decoded dict
+                # raises TypeError, the bare except below swallowed it, and
+                # the rule-based fallback never ran.
                 my_players = prompt_data.get("myPlayers", [my_player_id])
                 effective_pid = my_players[0] if my_players else my_player_id
                 commands = fallback_fn(
@@ -86,9 +124,12 @@ def create_invoke_handler(
                     effective_pid,
                 )
                 yield json.dumps(commands)
-            except Exception:
+            except Exception as fallback_error:
+                log.error(f"{position_label} fallback also failed: {fallback_error}")
                 cmd = dict(last_resort)
-                cmd["teamId"] = 0  # best guess when payload parsing also failed
+                # team_id came from the payload at entry, so the last resort
+                # is no longer hardcoded to HOME.
+                cmd["teamId"] = team_id
                 yield json.dumps([cmd])
 
     return invoke

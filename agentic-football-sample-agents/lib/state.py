@@ -184,14 +184,21 @@ def summarize_state(
     # My player info
     if me:
         pos = me.get("position", {})
-        stam = me.get("stamina", 100)
+        # Stamina is a 0.0-1.0 fraction (current/max), not a 0-100 integer.
+        # The old default of 100 hid that: had the key ever been missing it
+        # would have rendered as "100" and the mistake would have been
+        # obvious immediately.
+        stam = me.get("stamina", 1.0)
         dist_ball = dist(pos, ball_pos)
         has_ball = holder_is_me(ball, players, team_id, my_player_id)
         extra = f" distOppGoal={abs(pos.get('x', 0) - opp_goal_x):.1f}" if position_label in ("MID", "FWD1", "FWD2") else ""
         lines.append(
             f">>> YOUR PLAYER ({position_label}, id={my_player_id}): "
             f"pos=({pos.get('x',0):.1f},{pos.get('y',0):.1f}) "
-            f"stam={stam:.0f} distBall={dist_ball:.1f}{extra} hasBall={has_ball}"
+            # :.0f rounded the 0.0-1.0 fraction to a single digit, so the
+            # model only ever saw 0 or 1 — fully rested or exhausted, with
+            # nothing in between.
+            f"stam={stam:.2f} distBall={dist_ball:.1f}{extra} hasBall={has_ball}"
         )
     lines.append("")
 
