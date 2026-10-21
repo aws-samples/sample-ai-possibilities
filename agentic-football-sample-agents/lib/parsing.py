@@ -19,11 +19,13 @@ def parse_commands(text: str, team_id: int, my_player_id: int, on_recovered=None
     you want to log how often that happens; the commands themselves are used exactly as
     if the model had emitted valid JSON.
     """
-    match = re.search(r"\[[\s\S]*\]", text)
-    if match:
-        commands = _loads(match.group(), on_recovered)
-        if isinstance(commands, list):
-            return _tag_commands(commands, team_id, my_player_id)
+    for candidate in _iter_array_candidates(text):
+        parsed = _loads(candidate, on_recovered)
+        if not isinstance(parsed, list):
+            continue
+        commands = _tag_commands(parsed, team_id, my_player_id)
+        if commands:
+            return commands
 
     parsed = _loads(text, on_recovered)
     if isinstance(parsed, list):
@@ -34,6 +36,47 @@ def parse_commands(text: str, team_id: int, my_player_id: int, on_recovered=None
         return [parsed]
 
     return []
+
+
+def _iter_array_candidates(text: str):
+    """Yield each balanced ``[...]`` span in ``text``, left to right.
+
+    Previously the array was located with ``re.search(r"\\[[\\s\\S]*\\]")``,
+    which is greedy on both ends: the span ran from the *first* ``[`` in the
+    response to the *last* ``]``. Any bracket in the model's prose therefore
+    swallowed the command array, the combined span failed to parse, and the
+    agent silently dropped to rule-based play for that tick — which reads as
+    a sluggish or badly prompted agent rather than a parse failure.
+
+    Bracket depth is tracked so nested arrays inside a command survive, and
+    string literals are skipped so a ``[`` or ``]`` inside a JSON string does
+    not unbalance the scan.
+    """
+    for start, ch in enumerate(text):
+        if ch != "[":
+            continue
+        depth = 0
+        in_string = False
+        escaped = False
+        for i in range(start, len(text)):
+            c = text[i]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif c == "\\":
+                    escaped = True
+                elif c == '"':
+                    in_string = False
+                continue
+            if c == '"':
+                in_string = True
+            elif c == "[":
+                depth += 1
+            elif c == "]":
+                depth -= 1
+                if depth == 0:
+                    yield text[start : i + 1]
+                    break
 
 
 def _loads(candidate: str, on_recovered):
@@ -55,6 +98,11 @@ def _tag_commands(commands: list, team_id: int, my_player_id: int) -> list[dict]
     """Add teamId and playerId to each command, filtering to valid ones."""
     result = []
     for cmd in commands:
+        # A bracketed aside in the prose can parse as a list of non-objects,
+        # e.g. "[1, 2]". Skip those rather than raising, so the scan can move
+        # on to the real command array.
+        if not isinstance(cmd, dict):
+            continue
         cmd["teamId"] = team_id
         cmd["playerId"] = my_player_id
         if "commandType" in cmd:

@@ -120,6 +120,46 @@ def test_move_to_still_clamped():
     assert cmds[0]["parameters"]["target_y"] == -35
 
 
+def test_bracket_in_prose_does_not_eat_the_command():
+    """A bracketed aside anywhere in the response must not swallow the array.
+
+    The array used to be located with a greedy `\\[[\\s\\S]*\\]`, so the span ran
+    from the first `[` in the whole response to the last `]`. Any bracket in
+    the prose made the combined span unparseable and the agent silently fell
+    back to rule-based play for that tick.
+    """
+    cases = [
+        'Options [A] or [B]. I choose: [{"commandType":"SHOOT","parameters":{"aim_location":"TR","power":0.9}}]',
+        'I will move. [{"commandType":"MOVE_TO","parameters":{"target_x":3,"target_y":1}}] Done [end]',
+        '[1, 2] then [{"commandType":"PRESS_BALL","parameters":{}}]',
+        'See step [2]: [{"commandType":"INTERCEPT","parameters":{}}] // ref [4]',
+    ]
+    for text in cases:
+        cmds = parse_commands(text, TEAM_ID, MY_PLAYER_ID)
+        assert len(cmds) == 1, f"expected 1 command, got {len(cmds)} for: {text}"
+        assert cmds[0]["playerId"] == MY_PLAYER_ID
+        assert cmds[0]["teamId"] == TEAM_ID
+    print("=== BRACKET IN PROSE: command array still found ===")
+
+
+def test_bracket_inside_a_json_string_is_not_a_delimiter():
+    cmds = parse_commands(
+        '[{"commandType":"PASS","parameters":{"target_player_id":2,"type":"GROUND","note":"go [left]"}}]',
+        TEAM_ID, MY_PLAYER_ID)
+    assert len(cmds) == 1
+    assert cmds[0]["parameters"]["note"] == "go [left]"
+    print("=== STRING BRACKETS: not treated as delimiters ===")
+
+
+def test_nested_array_inside_a_command_survives():
+    cmds = parse_commands(
+        '[{"commandType":"MOVE_TO","parameters":{"path":[1,2],"target_x":2,"target_y":0}}]',
+        TEAM_ID, MY_PLAYER_ID)
+    assert len(cmds) == 1
+    assert cmds[0]["parameters"]["path"] == [1, 2]
+    print("=== NESTED ARRAY: preserved ===")
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:
