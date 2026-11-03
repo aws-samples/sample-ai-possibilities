@@ -95,23 +95,22 @@ $env:AWS_DEFAULT_REGION = "us-east-1"
 python deploy_all.py
 ```
 
-On AWS CloudShell, `cdk`, Node.js 20 and the AWS CLI are pre-installed. The home
-directory is limited to 1 GB, which a team deploy exceeds, so use `/tmp` as the
-working directory:
+On AWS CloudShell, `cdk`, Node.js 20 and the AWS CLI are pre-installed. Clone the
+repository into your home directory as usual and edit there; it persists between
+sessions. The home directory is limited to 1 GB, which a deploy's generated files
+exceed, so keep the tool caches in `/tmp` and let the deploy script work from a
+mirror in `/tmp` (`DEPLOY_WORK_DIR`); it copies the deployment state back when done:
 
 ```bash
-mkdir -p /tmp/work && cd /tmp/work
-git clone --depth 1 https://github.com/aws-samples/sample-ai-possibilities.git
 npm config set cache /tmp/npm-cache
 export UV_CACHE_DIR=/tmp/uv-cache
 sudo npm install -g @aws/agentcore
 curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
+DEPLOY_WORK_DIR=/tmp/work python3 deploy_all.py
 ```
 
-`/tmp` is cleared when the CloudShell session ends, so repeat these steps in each new
-session and copy any files you edited back to your home directory first. Before
-deploying a second team, delete the previous team's `agentcore/.cache` and
-`agentcore/cdk/cdk.out`.
+`/tmp` is cleared when the CloudShell session ends, so repeat the three install lines in
+each new session; your clone and your deployed agents are unaffected.
 
 The script checks prerequisites, writes the deploy target, bootstraps CDK if
 needed, stages the shared `lib/`, `gateway_agent_base_cdk.py`, and
