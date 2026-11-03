@@ -18,6 +18,7 @@ Prerequisites:
     npm install -g @aws/agentcore aws-cdk
     uv (https://docs.astral.sh/uv/getting-started/installation/)
     AWS credentials configured (AWS_PROFILE or env vars)
+    On AWS CloudShell: DEPLOY_WORK_DIR=/tmp/work python deploy_all.py (see README)
     CDK bootstrap run once per account/region (this script does it automatically)
 
 No Python packages required — only the standard library (AWS identity is
@@ -36,6 +37,21 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 LIB_SRC = SCRIPT_DIR.parent / "lib"
+
+# On AWS CloudShell the 1 GB home directory cannot hold the CDK app's node_modules,
+# the dependency staging and the CloudFormation assets. DEPLOY_WORK_DIR=/tmp/work
+# mirrors this team folder and lib/ there and deploys from the mirror, so edits
+# stay in the source tree; the deployment state is copied back after success.
+SOURCE_DIR = SCRIPT_DIR
+WORK_ROOT = os.environ.get("DEPLOY_WORK_DIR")
+if WORK_ROOT:
+    _work = Path(WORK_ROOT).resolve()
+    _generated = shutil.ignore_patterns("node_modules", ".cache", "cdk.out", "__pycache__", "*.pyc")
+    shutil.copytree(LIB_SRC, _work / "lib", dirs_exist_ok=True, ignore=_generated)
+    shutil.copytree(SCRIPT_DIR, _work / SCRIPT_DIR.name, dirs_exist_ok=True, ignore=_generated)
+    SCRIPT_DIR = _work / SCRIPT_DIR.name
+    LIB_SRC = _work / "lib"
+    print(f"Deploying from mirror {SCRIPT_DIR} (DEPLOY_WORK_DIR)\n")
 # CDK-flow variant of the gateway base module, staged into each agent dir
 # under the name src/main.py imports (gateway_agent_base). The invoke handler
 # reads no env vars, so both flows share the same file.
@@ -253,6 +269,13 @@ except Exception as e:
 
 else:
     cleanup()
+    if WORK_ROOT:
+        # The CLI records what it deployed next to the project; keep that with the source.
+        for rel in ("agentcore/aws-targets.json", "agentcore/.cli/deployed-state.json"):
+            mirrored = SCRIPT_DIR / rel
+            if mirrored.exists():
+                (SOURCE_DIR / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(mirrored, SOURCE_DIR / rel)
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 
