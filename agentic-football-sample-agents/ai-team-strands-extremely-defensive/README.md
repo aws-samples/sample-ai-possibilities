@@ -42,8 +42,20 @@ python3 ai-gk/test_local.py
 AWS_DEFAULT_REGION=us-east-1 python deploy_all.py
 ```
 
-On AWS CloudShell, `cdk`, Node.js 20 and the AWS CLI are pre-installed. Install the
-AgentCore CLI outside the 1 GB home directory and keep the package caches in `/tmp`
-(`npm config set cache /tmp/npm-cache`, `export UV_CACHE_DIR=/tmp/uv-cache`,
-`sudo npm install -g @aws/agentcore`). The CLI install lives on the ephemeral root
-filesystem, so re-run it in each new CloudShell session.
+On AWS CloudShell, `cdk`, Node.js 20 and the AWS CLI are pre-installed. The home
+directory is limited to 1 GB, which a team deploy exceeds, so use `/tmp` as the
+working directory:
+
+```bash
+mkdir -p /tmp/work && cd /tmp/work
+git clone --depth 1 https://github.com/aws-samples/sample-ai-possibilities.git
+npm config set cache /tmp/npm-cache
+export UV_CACHE_DIR=/tmp/uv-cache
+sudo npm install -g @aws/agentcore
+curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
+```
+
+`/tmp` is cleared when the CloudShell session ends, so repeat these steps in each new
+session and copy any files you edited back to your home directory first. Before
+deploying a second team, delete the previous team's `agentcore/.cache` and
+`agentcore/cdk/cdk.out`.
