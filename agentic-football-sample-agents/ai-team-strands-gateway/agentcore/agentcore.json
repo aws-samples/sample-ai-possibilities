@@ -76,23 +76,86 @@
               "inputSchema": {
                 "type": "object",
                 "properties": {
-                  "game_state": {
+                  "passer_position": {
                     "type": "object",
-                    "description": "Current game state"
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ]
                   },
-                  "team_id": {
-                    "type": "integer",
-                    "description": "Team ID (0 or 1)"
+                  "teammates": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "player_id": {
+                          "type": "integer"
+                        },
+                        "position": {
+                          "type": "object",
+                          "properties": {
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "x",
+                            "y"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "player_id",
+                        "position"
+                      ]
+                    }
                   },
-                  "player_id": {
-                    "type": "integer",
-                    "description": "Player ID (0-4)"
+                  "opponents": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "player_id": {
+                          "type": "integer"
+                        },
+                        "position": {
+                          "type": "object",
+                          "properties": {
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "x",
+                            "y"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "player_id",
+                        "position"
+                      ]
+                    }
                   }
                 },
                 "required": [
-                  "game_state",
-                  "team_id",
-                  "player_id"
+                  "passer_position",
+                  "teammates",
+                  "opponents"
                 ]
               }
             }
@@ -119,23 +182,66 @@
               "inputSchema": {
                 "type": "object",
                 "properties": {
-                  "game_state": {
+                  "shooter_position": {
                     "type": "object",
-                    "description": "Current game state"
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ]
                   },
-                  "team_id": {
-                    "type": "integer",
-                    "description": "Team ID (0 or 1)"
+                  "goalkeeper_position": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ]
                   },
-                  "player_id": {
-                    "type": "integer",
-                    "description": "Player ID (0-4)"
+                  "team_side": {
+                    "type": "string",
+                    "enum": [
+                      "HOME",
+                      "AWAY"
+                    ]
+                  },
+                  "blocker_positions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ]
+                    }
                   }
                 },
                 "required": [
-                  "game_state",
-                  "team_id",
-                  "player_id"
+                  "shooter_position",
+                  "goalkeeper_position",
+                  "team_side"
                 ]
               }
             }
@@ -162,22 +268,60 @@
               "inputSchema": {
                 "type": "object",
                 "properties": {
-                  "game_state": {
-                    "type": "object",
-                    "description": "Current game state"
-                  },
-                  "team_id": {
-                    "type": "integer",
-                    "description": "Team ID (0 or 1)"
+                  "opponent_positions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ]
+                    }
                   },
                   "zone": {
                     "type": "string",
-                    "description": "Zone: attack, midfield, or defense"
+                    "enum": [
+                      "attack",
+                      "midfield",
+                      "defense"
+                    ]
+                  },
+                  "team_side": {
+                    "type": "string",
+                    "enum": [
+                      "HOME",
+                      "AWAY"
+                    ]
+                  },
+                  "my_position": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ]
                   }
                 },
                 "required": [
-                  "game_state",
-                  "team_id"
+                  "opponent_positions",
+                  "zone",
+                  "team_side",
+                  "my_position"
                 ]
               }
             }
@@ -204,23 +348,82 @@
               "inputSchema": {
                 "type": "object",
                 "properties": {
-                  "game_state": {
+                  "opponents": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "player_id": {
+                          "type": "integer"
+                        },
+                        "position": {
+                          "type": "object",
+                          "properties": {
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "x",
+                            "y"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "player_id",
+                        "position"
+                      ]
+                    }
+                  },
+                  "ball": {
                     "type": "object",
-                    "description": "Current game state"
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      },
+                      "possession_player_id": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ]
                   },
-                  "team_id": {
-                    "type": "integer",
-                    "description": "Team ID (0 or 1)"
+                  "my_position": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ]
                   },
-                  "player_id": {
-                    "type": "integer",
-                    "description": "Player ID (0-4)"
+                  "team_side": {
+                    "type": "string",
+                    "enum": [
+                      "HOME",
+                      "AWAY"
+                    ]
                   }
                 },
                 "required": [
-                  "game_state",
-                  "team_id",
-                  "player_id"
+                  "opponents",
+                  "ball",
+                  "my_position",
+                  "team_side"
                 ]
               }
             }
