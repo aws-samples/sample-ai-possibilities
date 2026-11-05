@@ -18,6 +18,7 @@ import os
 from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp.mcp_client import MCPClient
+from strands.tools.mcp.mcp_agent_tool import MCPAgentTool
 from mcp.client.streamable_http import streamablehttp_client
 
 
@@ -68,7 +69,9 @@ def create_gateway_agent(
 
     # Fetch tool definitions inside the context so the connection is active.
     with mcp_client:
-        tools = mcp_client.list_tools_sync()
+        # Nova rejects hyphens in tool names; rename for the model only.
+        tools = [MCPAgentTool(t.mcp_tool, t.mcp_client, name_override=t.tool_name.replace("-", "_"))
+                 for t in mcp_client.list_tools_sync()]
 
     agent = Agent(
         model=model,

@@ -47,6 +47,8 @@ def create_gateway_invoke_handler(
             )
             log.info(f"{position_label} gateway agent invoked for team {team_id}, controlling player {effective_pid}")
 
+            agent.messages.clear()  # each tick is independent; stops tool history piling up
+
             # Use MCP client context so Gateway tools are available
             with mcp_client:
                 response = agent(state_summary)
